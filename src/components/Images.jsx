@@ -444,6 +444,15 @@ export function Images() {
                   >
                     <Trash className="h-4 w-4" />
                   </button>
+                  {image.inUsed && (
+                    <button
+                      onClick={() => handleDeleteImage(image.id, true)}
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="强制删除镜像"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -484,7 +493,7 @@ export function Images() {
                     className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="删除镜像"
                   >
-                    <Trash className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                   {image.inUsed && (
                     <button
@@ -527,18 +536,6 @@ export function Images() {
                 </div>
               </div>
               
-              {image.inUsed && (
-                <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={() => handleDeleteImage(image.id, true)}
-                    className="w-full btn-danger flex items-center justify-center py-1 text-sm"
-                    title="强制删除镜像"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    强制删除
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
