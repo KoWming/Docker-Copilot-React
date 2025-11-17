@@ -3,7 +3,7 @@ import { Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { cn } from '../utils/cn'
 
-export function ThemeToggle() {
+export function ThemeToggle({ collapsed = false }) {
   const { theme, setTheme } = useTheme()
 
   const themes = [
@@ -11,6 +11,26 @@ export function ThemeToggle() {
     { value: 'dark', label: '深色', icon: Moon },
     { value: 'system', label: '系统', icon: Monitor },
   ]
+
+  if (collapsed) {
+    // 收起状态：只显示当前主题的图标，点击循环切换
+    const currentTheme = themes.find(t => t.value === theme)
+    const Icon = currentTheme.icon
+    
+    return (
+      <button
+        onClick={() => {
+          const currentIndex = themes.findIndex(t => t.value === theme)
+          const nextIndex = (currentIndex + 1) % themes.length
+          setTheme(themes[nextIndex].value)
+        }}
+        className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        title={`当前: ${currentTheme.label} (点击切换)`}
+      >
+        <Icon className="h-5 w-5" />
+      </button>
+    )
+  }
 
   return (
     <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">

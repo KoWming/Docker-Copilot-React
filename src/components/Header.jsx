@@ -8,13 +8,27 @@ import {
   Server,
   Image,
   Settings,
-  DatabaseBackup
+  DatabaseBackup,
+  Palette,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle.jsx'
 import { cn } from '../utils/cn.js'
 
-export function Sidebar({ activeTab, onTabChange, onLogout }) {
+export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false, onToggleCollapse }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const [internalCollapsed, setInternalCollapsed] = React.useState(false)
+  
+  // 使用外部传入的收起状态，如果没有则使用内部状态
+  const sidebarCollapsed = onToggleCollapse ? isCollapsed : internalCollapsed
+  const handleToggleCollapse = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse()
+    } else {
+      setInternalCollapsed(!internalCollapsed)
+    }
+  }
 
   const navItems = [
     {
@@ -25,12 +39,17 @@ export function Sidebar({ activeTab, onTabChange, onLogout }) {
     {
       id: '#images',
       label: '镜像',
-      icon: Image,
-    },
+      icon: Box,
+    },    
     {
       id: '#backups',
       label: '备份',
       icon: DatabaseBackup,
+    },
+    {
+      id: '#icons',
+      label: '图标',
+      icon: Palette,
     },
     {
       id: '#settings',
@@ -60,33 +79,50 @@ export function Sidebar({ activeTab, onTabChange, onLogout }) {
       {/* 侧边栏 */}
       <aside 
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transform transition-transform duration-300 ease-in-out",
+          "fixed lg:static inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transform transition-all duration-300 ease-in-out",
+          sidebarCollapsed ? "w-20" : "w-64",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         <div className="flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Box className="h-6 w-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Docker Copilot</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">容器管理平台</p>
-              </div>
+              {!sidebarCollapsed && (
+                <div className="transition-opacity duration-300">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Docker Copilot</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">容器管理平台</p>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center space-x-1">
+              {/* 桌面端收起按钮 */}
+              <button
+                onClick={handleToggleCollapse}
+                className="hidden lg:block p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
+              {/* 移动端关闭按钮 */}
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="lg:hidden p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* 导航菜单 */}
-          <nav className="flex-1 px-4 py-6">
-            <ul className="space-y-2">
+          <nav className={cn("flex-1 py-6", sidebarCollapsed ? "px-2" : "px-4")}>
+            <ul className={cn("space-y-1", sidebarCollapsed ? "space-y-8" : "space-y-1")}>
               {navItems.map((item) => {
                 const Icon = item.icon
                 return (
@@ -97,14 +133,18 @@ export function Sidebar({ activeTab, onTabChange, onLogout }) {
                         setIsMobileMenuOpen(false)
                       }}
                       className={cn(
-                        "w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200",
+                        "w-full flex items-center rounded-xl text-left transition-all duration-200 group",
+                        sidebarCollapsed ? "justify-center px-2 py-3" : "space-x-3 px-4 py-4",
                         activeTab === item.id
                           ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       )}
+                      title={sidebarCollapsed ? item.label : undefined}
                     >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
+                      <Icon className={cn("flex-shrink-0", sidebarCollapsed ? "h-6 w-6" : "h-5 w-5")} />
+                      {!sidebarCollapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
                     </button>
                   </li>
                 )
@@ -113,9 +153,9 @@ export function Sidebar({ activeTab, onTabChange, onLogout }) {
           </nav>
 
           {/* 底部 */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <ThemeToggle />
+          <div className={cn("border-t border-gray-200 dark:border-gray-700", sidebarCollapsed ? "p-2" : "p-4")}>
+            <div className={cn("space-y-2", sidebarCollapsed ? "flex flex-col items-center" : "flex items-center justify-between")}>
+              <ThemeToggle collapsed={sidebarCollapsed} />
               <button
                 onClick={onLogout}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -124,9 +164,11 @@ export function Sidebar({ activeTab, onTabChange, onLogout }) {
                 <LogOut className="h-5 w-5" />
               </button>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              <p>Docker Copilot v1.0</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
+                <p>Docker Copilot v1.0</p>
+              </div>
+            )}
           </div>
         </div>
       </aside>

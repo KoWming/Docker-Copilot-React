@@ -5,8 +5,10 @@ import { Containers } from './components/Containers.jsx'
 import { Images } from './components/Images.jsx'
 import { Settings } from './components/Settings.jsx'
 import { Backups } from './components/Backups.jsx'
+import { Icons } from './components/Icons.jsx'
 import { ThemeProvider } from './hooks/useTheme.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cn } from './utils/cn.js'
 
 // 创建一个全局的QueryClient实例
 const queryClient = new QueryClient({
@@ -21,6 +23,7 @@ const queryClient = new QueryClient({
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [activeTab, setActiveTab] = useState('#containers')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     // 检查本地存储中是否有token
@@ -82,6 +85,8 @@ function AppContent() {
         return <Containers />
       case '#images':
         return <Images />
+      case '#icons':
+        return <Icons />
       case '#backups':
         return <Backups />
       case '#settings':
@@ -101,8 +106,14 @@ function AppContent() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onLogout={handleLogout}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      <main className="flex-1 h-screen overflow-y-auto p-6">
+      <main className={cn(
+        "flex-1 h-screen overflow-y-auto transition-all duration-300",
+        isSidebarCollapsed ? "lg:ml-0" : "lg:ml-0",
+        "p-6"
+      )}>
         {renderContent()}
       </main>
     </div>

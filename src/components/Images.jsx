@@ -1,8 +1,26 @@
 import React, { useState, useEffect } from 'react'
-import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, Image as ImageIcon } from 'lucide-react'
+import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, ImageIcon } from 'lucide-react'
 import { imageAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
-import { builtInImageLogos, getImageLogo } from '../config/imageLogos.js'
+import { getImageLogo } from '../config/imageLogos.js'
+
+// 安全的图片组件
+function SafeImage({ src, alt, className, fallback }) {
+  const [hasError, setHasError] = React.useState(false)
+  
+  if (hasError || !src) {
+    return fallback
+  }
+  
+  return (
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  )
+}
 
 export function Images() {
   const [images, setImages] = useState([])
@@ -11,20 +29,9 @@ export function Images() {
   const [selectedImages, setSelectedImages] = useState([]) // 用于多选功能
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false) // 多选模式状态
   const [viewMode, setViewMode] = useState('list') // 视图模式: 'list' 或 'grid'
-  const [selectedImage, setSelectedImage] = useState(null) // 用于图标设置弹窗
-  const [imageLogos, setImageLogos] = useState({}) // 存储镜像logo URL
 
-  // 初始化从localStorage加载镜像logo
-  useEffect(() => {
-    const savedLogos = localStorage.getItem('docker_copilot_image_logos')
-    if (savedLogos) {
-      try {
-        setImageLogos(JSON.parse(savedLogos))
-      } catch (e) {
-        console.error('解析镜像logo数据失败:', e)
-      }
-    }
-  }, [])
+
+
 
   const fetchImages = async () => {
     try {
@@ -113,14 +120,7 @@ export function Images() {
     window.location.reload()
   }
 
-  // 保存镜像logo URL
-  const saveImageLogo = (image, logoUrl) => {
-    // 使用镜像名称作为键名，格式为 "镜像名称"
-    const imageKey = image.name;
-    const updatedLogos = { ...imageLogos, [imageKey]: logoUrl }
-    setImageLogos(updatedLogos)
-    localStorage.setItem('docker_copilot_image_logos', JSON.stringify(updatedLogos))
-  }
+
 
   // 切换多选模式
   const toggleMultiSelectMode = () => {
@@ -317,7 +317,7 @@ export function Images() {
                   )}
                   title="网格视图"
                 >
-                  <HardDrive className="h-4 w-4" />
+                  <ImageIcon className="h-4 w-4" />
                 </button>
               </div>
               <button 
@@ -421,29 +421,16 @@ export function Images() {
                     />
                   )}
                   <div className="flex-shrink-0">
-                    {getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
-                      <img 
-                        src={getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
-                        alt={image.name} 
-                        className="h-10 w-10 rounded-lg object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = `
-                            <div class="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <path d="M21 15l-5-5L5 21"></path>
-                              </svg>
-                            </div>
-                          `;
-                        }}
-                      />
-                    ) : (
-                      <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <HardDrive className="h-6 w-6 text-white" />
-                      </div>
-                    )}
+                    <SafeImage
+                      src={getImageLogo(image.name)}
+                      alt={image.name}
+                      className="h-10 w-10 rounded-lg object-cover"
+                      fallback={
+                        <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                          <HardDrive className="h-6 w-6 text-white" />
+                        </div>
+                      }
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center space-x-2">
@@ -471,13 +458,7 @@ export function Images() {
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setSelectedImage(image)}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    title="设置镜像图标"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </button>
+
                   <a
                     href={`https://hub.docker.com/r/${image.name}`}
                     target="_blank"
@@ -524,34 +505,19 @@ export function Images() {
                   />
                 )}
                 <div className="flex-shrink-0">
-                  {getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
-                    <img 
-                      src={getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
-                      alt={image.name} 
-                      className="h-12 w-12 rounded-lg object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `
-                          <div class="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <HardDrive class="h-6 w-6 text-white" />
-                          </div>
-                        `;
-                      }}
-                    />
-                  ) : (
-                    <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <HardDrive className="h-6 w-6 text-white" />
-                    </div>
-                  )}
+                  <SafeImage
+                    src={getImageLogo(image.name)}
+                    alt={image.name}
+                    className="h-12 w-12 rounded-lg object-cover"
+                    fallback={
+                      <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <HardDrive className="h-6 w-6 text-white" />
+                      </div>
+                    }
+                  />
                 </div>
                 <div className="flex items-center space-x-1 ml-auto">
-                  <button
-                    onClick={() => setSelectedImage(image)}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    title="设置镜像图标"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </button>
+
                   <a
                     href={`https://hub.docker.com/r/${image.name}`}
                     target="_blank"
@@ -615,123 +581,9 @@ export function Images() {
         </div>
       )}
 
-      {/* 镜像图标设置弹窗 */}
-      {selectedImage && (
-        <ImageLogoModal 
-          image={selectedImage} 
-          currentLogo={imageLogos[selectedImage.id] || ''} 
-          onClose={() => setSelectedImage(null)} 
-          onSave={(image, logoUrl) => {
-            saveImageLogo(image, logoUrl)
-            setSelectedImage(null)
-          }} 
-        />
-      )}
+
     </div>
   )
 }
 
-// 镜像图标设置弹窗组件
-function ImageLogoModal({ image, currentLogo, onClose, onSave }) {
-  const [logoUrl, setLogoUrl] = useState(currentLogo)
-  const [isSaving, setIsSaving] = useState(false)
 
-  const handleSave = () => {
-    setIsSaving(true)
-    // 模拟保存过程
-    setTimeout(() => {
-      onSave(image, logoUrl)
-      setIsSaving(false)
-    }, 300)
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">设置镜像图标</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        <div className="px-6 py-4 space-y-5">
-          <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0">
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt={image.name} 
-                  className="h-12 w-12 rounded-lg object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
-                style={{ display: logoUrl ? 'none' : 'flex' }}
-              >
-                <HardDrive className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white">{image.name}</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Tag: {image.tag}</p>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              图标URL
-            </label>
-            <input
-              type="text"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              className="input w-full"
-              placeholder="输入图标URL，例如: https://example.com/logo.png"
-            />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              输入有效的图片URL来为镜像设置自定义图标。使用此镜像创建的容器将显示相同的图标。
-            </p>
-          </div>
-        </div>
-        
-        <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-700/30">
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="btn-secondary px-4 py-2"
-            >
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="btn-primary px-4 py-2 flex items-center"
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  保存中...
-                </>
-              ) : '保存'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
