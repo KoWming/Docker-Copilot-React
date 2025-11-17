@@ -5,6 +5,14 @@ import { cn } from '../utils/cn'
 
 export function ThemeToggle({ collapsed = false }) {
   const { theme, setTheme } = useTheme()
+  
+  // 获取当前实际应用的主题（当theme为system时，返回系统实际主题）
+  const getActualTheme = () => {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
+    return theme
+  }
 
   const themes = [
     { value: 'light', label: '浅色', icon: Sun },
@@ -14,7 +22,10 @@ export function ThemeToggle({ collapsed = false }) {
 
   if (collapsed) {
     // 收起状态：只显示当前主题的图标，点击循环切换
-    const currentTheme = themes.find(t => t.value === theme)
+    // 如果是系统主题，显示系统当前实际主题的图标
+    const actualTheme = getActualTheme()
+    const displayTheme = theme === 'system' ? 'system' : actualTheme
+    const currentTheme = themes.find(t => t.value === displayTheme)
     const Icon = currentTheme.icon
     
     return (

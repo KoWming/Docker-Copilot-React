@@ -155,14 +155,32 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
 
           {/* 底部 */}
           <div className={cn("border-t border-gray-200 dark:border-gray-700", sidebarCollapsed ? "p-2" : "p-4")}>
-            <div className={cn("space-y-2", sidebarCollapsed ? "flex flex-col items-center" : "flex items-center justify-between")}>
-              <ThemeToggle collapsed={sidebarCollapsed} />
+            {/* 操作按钮区域 */}
+            <div className={cn(
+              "flex items-center gap-2",
+              sidebarCollapsed ? "flex-col" : "justify-between"
+            )}>
+              {/* 主题切换按钮 */}
+              <div className={cn(
+                "flex items-center justify-center",
+                sidebarCollapsed ? "w-full" : ""
+              )}>
+                <ThemeToggle collapsed={sidebarCollapsed} />
+              </div>
+              
+              {/* 退出登录按钮 */}
               <button
                 onClick={onLogout}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="退出登录"
+                className={cn(
+                  "flex items-center justify-center gap-2 px-3 py-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg transition-all duration-200 group",
+                  sidebarCollapsed ? "w-full p-2" : "flex-1"
+                )}
+                title={sidebarCollapsed ? "退出登录" : ""}
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 flex-shrink-0 group-hover:rotate-12 transition-transform duration-200" />
+                {!sidebarCollapsed && (
+                  <span className="text-sm font-medium">退出</span>
+                )}
               </button>
             </div>
             {!sidebarCollapsed && (

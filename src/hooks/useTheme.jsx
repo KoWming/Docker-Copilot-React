@@ -12,13 +12,30 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const root = window.document.documentElement
     
+    const applyTheme = () => {
+      if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        root.classList.toggle('dark', systemTheme === 'dark')
+        localStorage.setItem('docker_copilot_theme', 'system')
+      } else {
+        root.classList.toggle('dark', theme === 'dark')
+        localStorage.setItem('docker_copilot_theme', theme)
+      }
+    }
+
+    // 立即应用主题
+    applyTheme()
+
+    // 监听系统主题变化
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      root.classList.toggle('dark', systemTheme === 'dark')
-      localStorage.setItem('docker_copilot_theme', 'system')
-    } else {
-      root.classList.toggle('dark', theme === 'dark')
-      localStorage.setItem('docker_copilot_theme', theme)
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = () => applyTheme()
+      
+      mediaQuery.addEventListener('change', handleChange)
+      
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange)
+      }
     }
   }, [theme])
 
