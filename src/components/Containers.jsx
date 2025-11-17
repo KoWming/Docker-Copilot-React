@@ -29,6 +29,8 @@ export function Containers() {
   // 添加批量操作相关的状态
   const [selectedContainers, setSelectedContainers] = useState([])
   const [isBatchMode, setIsBatchMode] = useState(false)
+  // 添加操作状态跟踪
+  const [containerActions, setContainerActions] = useState({}) // 跟踪每个容器的操作状态
 
   // 使用React Query获取容器列表
   const { data: containers = [], isLoading, refetch } = useQuery({
@@ -54,6 +56,12 @@ export function Containers() {
     try {
       setShowActions(null)
       
+      // 设置操作状态为加载中
+      setContainerActions(prev => ({
+        ...prev,
+        [containerId]: { action, loading: true }
+      }))
+      
       switch (action) {
         case 'start':
           await containerAPI.startContainer(containerId)
@@ -68,10 +76,52 @@ export function Containers() {
           break
       }
       
-      // 无效化查询以触发重新获取数据
-      await queryClient.invalidateQueries(['containers'])
+      // 立即更新本地状态，提供即时反馈
+      queryClient.setQueryData(['containers'], (oldData) => {
+        if (!oldData) return oldData
+        
+        return oldData.map(container => {
+          if (container.id === containerId) {
+            let newStatus = container.status
+            switch (action) {
+              case 'start':
+                newStatus = 'running'
+                break
+              case 'stop':
+                newStatus = 'stopped'
+                break
+              case 'restart':
+                newStatus = 'running'
+                break
+              default:
+                break
+            }
+            return { ...container, status: newStatus }
+          }
+          return container
+        })
+      })
+      
+      // 清除操作状态
+      setContainerActions(prev => {
+        const newState = { ...prev }
+        delete newState[containerId]
+        return newState
+      })
+      
+      // 延迟无效化查询以获取最新数据
+      setTimeout(() => {
+        queryClient.invalidateQueries(['containers'])
+      }, 1000)
+      
     } catch (error) {
       console.error('操作失败:', error)
+      // 清除操作状态
+      setContainerActions(prev => {
+        const newState = { ...prev }
+        delete newState[containerId]
+        return newState
+      })
       if (error.response?.status === 401) {
         console.error('认证失败，请重新登录')
       }
@@ -81,39 +131,94 @@ export function Containers() {
   // 批量操作处理函数
   const handleBatchAction = async (action) => {
     try {
+      // 为所有选中的容器设置加载状态
+      selectedContainers.forEach(containerId => {
+        setContainerActions(prev => ({
+          ...prev,
+          [containerId]: { action, loading: true }
+        }))
+      })
+      
+      // 立即更新本地状态提供即时反馈
+      if (action === 'start' || action === 'stop' || action === 'restart') {
+        queryClient.setQueryData(['containers'], (oldData) => {
+          if (!oldData) return oldData
+          
+          return oldData.map(container => {
+            if (selectedContainers.includes(container.id)) {
+              let newStatus = container.status
+              switch (action) {
+                case 'start':
+                  newStatus = 'running'
+                  break
+                case 'stop':
+                  newStatus = 'stopped'
+                  break
+                case 'restart':
+                  newStatus = 'running'
+                  break
+                default:
+                  break
+              }
+              return { ...container, status: newStatus }
+            }
+            return container
+          })
+        })
+      }
+      
       // 对每个选中的容器执行操作
       for (const containerId of selectedContainers) {
-        switch (action) {
-          case 'start':
-            await containerAPI.startContainer(containerId)
-            break
-          case 'stop':
-            await containerAPI.stopContainer(containerId)
-            break
-          case 'restart':
-            await containerAPI.restartContainer(containerId)
-            break
-          case 'update':
-            // 这里需要实现更新逻辑，暂时留空
-            // 为了简化，我们使用容器当前的镜像信息进行更新
-            const container = containers.find(c => c.id === containerId)
-            if (container) {
-              await containerAPI.updateContainer(containerId, container.usingImage, container.name, true)
-            }
-            break
-          default:
-            break
+        try {
+          switch (action) {
+            case 'start':
+              await containerAPI.startContainer(containerId)
+              break
+            case 'stop':
+              await containerAPI.stopContainer(containerId)
+              break
+            case 'restart':
+              await containerAPI.restartContainer(containerId)
+              break
+            case 'update':
+              // 这里需要实现更新逻辑，暂时留空
+              // 为了简化，我们使用容器当前的镜像信息进行更新
+              const container = containers.find(c => c.id === containerId)
+              if (container) {
+                await containerAPI.updateContainer(containerId, container.usingImage, container.name, true)
+              }
+              break
+            default:
+              break
+          }
+        } finally {
+          // 清除单个容器的操作状态
+          setContainerActions(prev => {
+            const newState = { ...prev }
+            delete newState[containerId]
+            return newState
+          })
         }
       }
       
-      // 无效化查询以触发重新获取数据
-      await queryClient.invalidateQueries(['containers'])
+      // 延迟无效化查询以获取最新数据
+      setTimeout(() => {
+        queryClient.invalidateQueries(['containers'])
+      }, 1000)
       
       // 清除选中状态
       setSelectedContainers([])
       setIsBatchMode(false)
     } catch (error) {
       console.error('批量操作失败:', error)
+      // 清除所有操作状态
+      selectedContainers.forEach(containerId => {
+        setContainerActions(prev => {
+          const newState = { ...prev }
+          delete newState[containerId]
+          return newState
+        })
+      })
     }
   }
 
@@ -383,48 +488,62 @@ export function Containers() {
                 {/* 单个容器操作按钮（非批量模式下显示） */}
                 {!isBatchMode && (
                   <div className="flex space-x-2">
-                    {container.status === 'running' ? (
+                    {containerActions[container.id]?.loading ? (
+                      <div className="flex items-center space-x-2 px-3 py-2">
+                        <RefreshCw className="h-4 w-4 animate-spin text-primary-600" />
+                        <span className="text-sm text-primary-600">
+                          {containerActions[container.id].action === 'start' && '启动中...'}
+                          {containerActions[container.id].action === 'stop' && '停止中...'}
+                          {containerActions[container.id].action === 'restart' && '重启中...'}
+                          {containerActions[container.id].action === 'update' && '更新中...'}
+                        </span>
+                      </div>
+                    ) : (
                       <>
+                        {container.status === 'running' ? (
+                          <>
+                            <button
+                              onClick={() => handleContainerAction(container.id, 'stop')}
+                              className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="停止"
+                            >
+                              <Square className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleContainerAction(container.id, 'restart')}
+                              className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="重启"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleContainerAction(container.id, 'start')}
+                            className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                            title="启动"
+                          >
+                            <Play className="h-4 w-4" />
+                          </button>
+                        )}
+                        
                         <button
-                          onClick={() => handleContainerAction(container.id, 'stop')}
-                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="停止"
+                          onClick={() => handleContainerAction(container.id, 'update')}
+                          className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                          title="更新"
                         >
-                          <Square className="h-4 w-4" />
+                          <Upload className="h-4 w-4" />
                         </button>
+                        
                         <button
-                          onClick={() => handleContainerAction(container.id, 'restart')}
+                          onClick={() => setSelectedContainer(container)}
                           className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="重启"
+                          title="详情"
                         >
-                          <RotateCcw className="h-4 w-4" />
+                          <Edit3 className="h-4 w-4" />
                         </button>
                       </>
-                    ) : (
-                      <button
-                        onClick={() => handleContainerAction(container.id, 'start')}
-                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        title="启动"
-                      >
-                        <Play className="h-4 w-4" />
-                      </button>
                     )}
-                    
-                    <button
-                      onClick={() => handleContainerAction(container.id, 'update')}
-                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="更新"
-                    >
-                      <Upload className="h-4 w-4" />
-                    </button>
-                    
-                    <button
-                      onClick={() => setSelectedContainer(container)}
-                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="详情"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </button>
                   </div>
                 )}
               </div>
