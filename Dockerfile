@@ -1,10 +1,6 @@
 # 构建阶段 - Build Stage
 FROM node:18-alpine AS builder
 
-# 接收构建参数
-ARG VITE_API_BASE_URL=http://127.0.0.1:12712
-ARG VITE_PORT=12713
-
 # 设置工作目录
 WORKDIR /app
 
@@ -17,15 +13,15 @@ RUN npm install
 # 复制项目文件
 COPY . .
 
-# 构建应用 - 将构建参数传递给 Vite
-RUN VITE_API_BASE_URL=${VITE_API_BASE_URL} VITE_PORT=${VITE_PORT} npm run build
+# 构建应用
+RUN npm run build
 
 # ============================================
 # 运行阶段 - Production Stage
 FROM node:18-alpine
 
-# 安装轻量级HTTP服务器和必要工具
-RUN npm install -g serve && apk add --no-cache bash
+# 安装轻量级HTTP服务器和必要工具（使用 sh 而非 bash）
+RUN npm install -g serve && apk add --no-cache gawk
 
 # 设置工作目录
 WORKDIR /app
