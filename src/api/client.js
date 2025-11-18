@@ -103,4 +103,63 @@ export const progressAPI = {
   getProgress: (taskid) => apiClient.get(`/api/progress/${taskid}`),
 }
 
+// GitHub API - 用于检查前端更新
+export const githubAPI = {
+  /**
+   * 获取 GitHub 仓库的最新 Release
+   * @param {string} owner - 仓库所有者
+   * @param {string} repo - 仓库名称
+   * @returns {Promise} 返回最新 Release 信息
+   */
+  getLatestRelease: async (owner, repo) => {
+    try {
+      const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+        timeout: 5000,
+      })
+      return response.data
+    } catch (error) {
+      console.warn('获取 GitHub 最新版本失败:', error.message)
+      throw error
+    }
+  },
+
+  /**
+   * 获取 GitHub 仓库的所有 Releases
+   * @param {string} owner - 仓库所有者
+   * @param {string} repo - 仓库名称
+   * @param {number} perPage - 每页返回数量
+   * @returns {Promise} 返回 Release 列表
+   */
+  getReleases: async (owner, repo, perPage = 5) => {
+    try {
+      const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/releases`, {
+        params: { per_page: perPage },
+        timeout: 5000,
+      })
+      return response.data
+    } catch (error) {
+      console.warn('获取 GitHub Releases 列表失败:', error.message)
+      throw error
+    }
+  },
+
+  /**
+   * 获取 GitHub 仓库信息
+   * @param {string} owner - 仓库所有者
+   * @param {string} repo - 仓库名称
+   * @returns {Promise} 返回仓库信息
+   */
+  getRepoInfo: async (owner, repo) => {
+    try {
+      const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
+        timeout: 5000,
+      })
+      return response.data
+    } catch (error) {
+      console.warn('获取 GitHub 仓库信息失败:', error.message)
+      throw error
+    }
+  },
+}
+
 export default apiClient

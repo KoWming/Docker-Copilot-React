@@ -69,11 +69,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable={{branch==dev}}
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
 
       # 5. 构建并推送镜像
       - name: Build and push Docker image

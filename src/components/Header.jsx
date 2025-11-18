@@ -8,42 +8,45 @@ import {
   Server,
   Image,
   DatabaseBackup,
-  Palette
+  Palette,
+  Info
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle.jsx'
+import { UpdatePrompt } from './UpdatePrompt.jsx'
 import { cn } from '../utils/cn.js'
 import { LOGO_CONFIG } from '../assets/logo.js'
-import { useQuery } from '@tanstack/react-query'
-import { versionAPI } from '../api/client.js'
-import { version as FRONTEND_VERSION } from '../../package.json'
+import { useVersionCheck } from '../hooks/useVersionCheck.js'
+import { VERSION_CONFIG, formatBuildTime } from '../config/version.js'
 
 export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false, onToggleCollapse }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [internalCollapsed, setInternalCollapsed] = React.useState(false)
   
   // 时间格式转换函数 - 将UTC时间转换为北京时间
-  const formatBuildDate = (dateString) => {
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) {
-        return dateString
-      }
-      // 转换为北京时间 (UTC+8)
-      const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000)
-      return beijingDate.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      }).replace(/\//g, '-')
-    } catch (error) {
-      return dateString
-    }
+  const formatVersionBuildDate = (dateString) => {
+    return formatBuildTime(dateString)
   }
   
+  // 使用版本检查 Hook
+  const {
+    updateAvailable,
+    showUpdatePrompt,
+    setShowUpdatePrompt,
+    frontendVersion,
+    frontendHasUpdate,
+    latestFrontendVersion,
+    backendVersion,
+    remoteVersion,
+    buildDate,
+    buildTime,
+    buildEnv,
+    hasBackendUpdate,
+    refreshPage,
+    updateBackend,
+    checkForUpdates,
+    openGithubRelease
+  } = useVersionCheck()
+
   // 使用外部传入的收起状态，如果没有则使用内部状态
   const sidebarCollapsed = onToggleCollapse ? isCollapsed : internalCollapsed
   const handleToggleCollapse = () => {
@@ -53,70 +56,6 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
       setInternalCollapsed(!internalCollapsed)
     }
   }
-
-  // 查询版本信息
-  const { data: versionData } = useQuery({
-    queryKey: ['version'],
-    queryFn: async () => {
-      try {
-        // 获取本地版本信息
-        const localResponse = await versionAPI.getVersion('local')
-        console.log('本地版本信息响应:', localResponse.data)
-        
-        let localVersion = 'unknown'
-        let buildDate = ''
-        
-        if (localResponse.data.code === 200 || localResponse.data.code === 0) {
-          const localData = localResponse.data.data
-          if (localData && typeof localData === 'object') {
-            localVersion = localData.version || 'unknown'
-            buildDate = localData.buildDate || ''
-          } else if (typeof localData === 'string') {
-            localVersion = localData
-          }
-        }
-        
-        // 获取远端版本信息
-        let remoteVersion = 'unknown'
-        let hasUpdate = false
-        try {
-          const remoteResponse = await versionAPI.getVersion('remote')
-          console.log('远端版本信息响应:', remoteResponse.data)
-          
-          if (remoteResponse.data.code === 200 || remoteResponse.data.code === 0) {
-            const remoteData = remoteResponse.data.data
-            if (remoteData && typeof remoteData === 'object') {
-              remoteVersion = remoteData.remoteVersion || 'unknown'
-            } else if (typeof remoteData === 'string') {
-              remoteVersion = remoteData
-            }
-            
-            // 对比版本号，判断是否有更新
-            hasUpdate = remoteVersion !== localVersion && remoteVersion !== 'unknown'
-          }
-        } catch (error) {
-          console.warn('获取远端版本信息失败:', error)
-        }
-        
-        return {
-          version: localVersion,
-          buildDate,
-          remoteVersion,
-          hasUpdate
-        }
-      } catch (error) {
-        console.error('获取版本信息失败:', error)
-        return { 
-          version: 'unknown', 
-          buildDate: '',
-          remoteVersion: 'unknown',
-          hasUpdate: false
-        }
-      }
-    },
-    refetchInterval: 60000, // 每分钟刷新一次
-    refetchOnWindowFocus: false,
-  })
 
   const navItems = [
     {
@@ -276,32 +215,66 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
                 {/* 版本信息卡片 */}
                 <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-lg p-3 border border-primary-200 dark:border-primary-700/50">
                   <div className="space-y-2">
+                    {/* 前端版本 */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-600 dark:text-gray-400">前端</span>
-                      <span className="text-xs font-semibold text-primary-600 dark:text-primary-400 bg-white dark:bg-primary-900/30 px-2 py-0.5 rounded">{FRONTEND_VERSION}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-semibold text-primary-600 dark:text-primary-400 bg-white dark:bg-primary-900/30 px-2 py-0.5 rounded cursor-pointer hover:shadow-md transition-all" title="点击检查更新" onClick={() => checkForUpdates()}>
+                          {frontendVersion}
+                        </span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                          {buildEnv === 'development' ? '开发' : '生产'}
+                        </span>
+                        {frontendHasUpdate && (
+                          <button
+                            onClick={() => openGithubRelease()}
+                            className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded animate-pulse hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors cursor-pointer"
+                            title={`点击查看 v${latestFrontendVersion} 更新`}>
+                            更新 →
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* 后端版本 */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-600 dark:text-gray-400">后端</span>
                       <div className="flex items-center gap-1">
                         <span className={cn(
-                          "text-xs font-semibold px-2 py-0.5 rounded",
-                          versionData?.hasUpdate 
+                          "text-xs font-semibold px-2 py-0.5 rounded cursor-pointer hover:shadow-md transition-all",
+                          hasBackendUpdate
                             ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' 
                             : 'bg-white dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                        )}>
-                          {versionData?.version || 'v1.0'}
+                        )}
+                        onClick={() => checkForUpdates()}
+                        title="点击检查更新">
+                          {backendVersion || 'v1.0'}
                         </span>
-                        {versionData?.hasUpdate && (
-                          <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded animate-pulse">
+                        {hasBackendUpdate && (
+                          <button
+                            onClick={() => setShowUpdatePrompt(true)}
+                            className="text-xs font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded animate-pulse hover:bg-yellow-200 dark:hover:bg-yellow-900/40 transition-colors cursor-pointer"
+                            title="点击查看更新">
                             更新
-                          </span>
+                          </button>
                         )}
                       </div>
                     </div>
-                    {versionData?.buildDate && (
+
+                    {/* 构建时间 */}
+                    {buildTime && (
                       <div className="pt-2 border-t border-primary-200 dark:border-primary-700/50">
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          构建时间：{formatBuildDate(versionData.buildDate)}
+                          构建：{formatVersionBuildDate(buildTime)}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 后端构建时间 */}
+                    {buildDate && (
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          后端：{formatVersionBuildDate(buildDate)}
                         </p>
                       </div>
                     )}
@@ -312,6 +285,18 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
           </div>
         </div>
       </aside>
+
+      {/* 版本更新提示弹窗 */}
+      <UpdatePrompt
+        isVisible={showUpdatePrompt}
+        onClose={() => setShowUpdatePrompt(false)}
+        frontendVersion={frontendVersion}
+        backendVersion={backendVersion}
+        remoteVersion={remoteVersion}
+        hasBackendUpdate={hasBackendUpdate}
+        onRefresh={refreshPage}
+        onUpdateBackend={updateBackend}
+      />
     </>
   )
 }
