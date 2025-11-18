@@ -13,12 +13,14 @@ if [ $# -eq 0 ]; then
   DIST_DIR="/app/dist"
   PORT="${PORT:-12713}"
   START_SERVER=true
+  CONFIG_DIR="/app/src/config"
 else
   # 本地配置模式
   API_BASE_URL="${1}"
   DIST_DIR="${2:-.}/dist"
   PORT="${3:-12713}"
   START_SERVER=false
+  CONFIG_DIR="./src/config"
 fi
 
 echo "================================================"
@@ -27,6 +29,7 @@ echo "================================================"
 echo "API Base URL: $API_BASE_URL"
 echo "Distribution: $DIST_DIR"
 echo "Server Port:  $PORT"
+echo "Config Dir:   $CONFIG_DIR"
 echo "================================================"
 
 # 检查 dist 目录
@@ -42,6 +45,17 @@ if [ ! -f "${DIST_DIR}/index.html" ]; then
   echo "Files in dist:"
   ls -la "$DIST_DIR"
   exit 1
+fi
+
+# 检查配置目录
+if [ ! -d "$CONFIG_DIR" ]; then
+  echo "⚠ Warning: Config directory $CONFIG_DIR not found, creating it"
+  mkdir -p "$CONFIG_DIR"
+fi
+
+# 检查配置目录中的图片目录
+if [ ! -d "$CONFIG_DIR/image" ]; then
+  echo "⚠ Warning: Image directory $CONFIG_DIR/image not found"
 fi
 
 # 在 index.html 中注入 API 配置

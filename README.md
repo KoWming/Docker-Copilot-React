@@ -30,7 +30,7 @@
 
 ### 三步启动
 
-```bash
+```
 # 1️⃣ 克隆项目
 git clone <repository-url>
 cd Docker-Copilot-React
@@ -196,3 +196,104 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 Made with ❤️ for Docker lovers
 
 </div>
+```
+
+```
+# Docker Copilot Frontend
+
+Docker 容器管理前端应用
+
+## 使用 Docker 运行
+
+### 基本运行命令
+
+```bash
+docker run -d \
+  --name dcf \
+  --restart always \
+  --network bridge \
+  -p 12713:12713 \
+  -e VITE_API_BASE_URL=http://192.168.50.4:12712 \
+  -e NODE_ENV=production \
+  -v /vol1/1000/DSpace/DockerCopilot/DCF:/app/src/config:rw \
+  dongshull/docker-copilot-frontend:latest
+```
+
+### 使用 Docker Compose
+
+创建 `docker-compose.yml` 文件：
+
+```yaml
+version: '3.8'
+
+services:
+  docker-copilot-frontend:
+    image: dongshull/docker-copilot-frontend:latest
+    container_name: dcf
+    restart: always
+    network_mode: bridge
+    ports:
+      - "12713:12713"
+    environment:
+      - VITE_API_BASE_URL=http://192.168.50.4:12712
+      - NODE_ENV=production
+    volumes:
+      - /vol1/1000/DSpace/DockerCopilot/DCF:/app/src/config:rw
+```
+
+然后运行：
+
+```bash
+docker-compose up -d
+```
+
+## 配置文件目录结构
+
+挂载的目录 `/vol1/1000/DSpace/DockerCopilot/DCF` 应该具有以下结构：
+
+```
+DCF/
+└── image/
+    ├── 146.png
+    ├── 132.png
+    ├── 165.png
+    ├── 159.png
+    ├── 175.png
+    ├── 189.png
+    ├── IT-Tools_w7z24.webp
+    ├── QBittorrent_Q41Q0.webp
+    ├── Sub-Store.webp
+    ├── 718.png
+    ├── 100.png
+    └── 4.png
+```
+
+## 配置文件
+
+你还可以在挂载的目录中添加自定义配置文件：
+
+1. 在 `/vol1/1000/DSpace/DockerCopilot/DCF` 目录下创建 `imageLogos.js` 文件来自定义镜像logo映射：
+
+```javascript
+// 自定义镜像logo配置
+export const customImageLogos = {
+  "your-custom-image": "/src/config/image/your-logo.png"
+};
+```
+
+## 故障排除
+
+1. 如果遇到权限问题，请确保 Docker 容器有权限访问挂载的目录：
+   ```bash
+   chmod -R 755 /vol1/1000/DSpace/DockerCopilot/DCF
+   ```
+
+2. 如果目录不存在，请先创建：
+   ```bash
+   mkdir -p /vol1/1000/DSpace/DockerCopilot/DCF/image
+   ```
+
+3. 确保配置文件目录包含所需的图片文件，可以从项目源码中复制：
+   ```bash
+   cp -r src/config/image /vol1/1000/DSpace/DockerCopilot/DCF/
+   ```

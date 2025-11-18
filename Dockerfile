@@ -36,11 +36,11 @@ COPY --from=builder /app/src/config ./src/config
 COPY docker-config.sh /app/docker-config.sh
 RUN chmod +x /app/docker-config.sh
 
+# 创建配置目录
+RUN mkdir -p /app/src/config/image
+
 # 暴露端口
 EXPOSE 12713
-
-# 创建配置目录卷挂载点
-VOLUME ["/app/src/config"]
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
