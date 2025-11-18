@@ -29,6 +29,9 @@ WORKDIR /app
 # 从构建阶段复制构建结果
 COPY --from=builder /app/dist ./dist
 
+# 从构建阶段复制配置文件
+COPY --from=builder /app/src/config ./src/config
+
 # 复制配置脚本
 COPY docker-config.sh /app/docker-config.sh
 RUN chmod +x /app/docker-config.sh
@@ -37,7 +40,7 @@ RUN chmod +x /app/docker-config.sh
 EXPOSE 12713
 
 # 创建配置目录卷挂载点
-VOLUME ["/app/dist/config"]
+VOLUME ["/app/src/config"]
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
