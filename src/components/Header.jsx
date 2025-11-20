@@ -91,6 +91,11 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
       id: '#icons',
       label: '图标',
       icon: Palette,
+    },
+    {
+      id: '#about',
+      label: '关于',
+      icon: Info,
     },    
   ]
 

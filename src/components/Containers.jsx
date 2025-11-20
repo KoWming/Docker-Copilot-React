@@ -546,20 +546,31 @@ export function Containers() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      running: { label: '运行中', className: 'badge-success' },
-      stopped: { label: '已停止', className: 'badge-error' },
-      exited: { label: '已退出', className: 'badge-error' },
-      restarting: { label: '重启中', className: 'badge-warning' },
-      paused: { label: '已暂停', className: 'badge-info' }
+      running: { label: '运行中', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+      stopped: { label: '已停止', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+      restarting: { label: '重启中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+      paused: { label: '已暂停', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' }
     }
 
-    const config = statusConfig[status?.toLowerCase()] || { label: status, className: 'badge-info' }
+    const config = statusConfig[status?.toLowerCase()] || { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
     
     return (
-      <span className={cn('badge', config.className)}>
+      <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200', config.className)}>
         {config.label}
       </span>
     )
+  }
+
+  // 获取状态指示器颜色
+  const getStatusIndicatorColor = (status) => {
+    const statusConfig = {
+      running: 'bg-green-500',
+      stopped: 'bg-red-500',
+      restarting: 'bg-yellow-500',
+      paused: 'bg-blue-500'
+    }
+    
+    return statusConfig[status?.toLowerCase()] || 'bg-gray-500'
   }
 
   if (isLoading) {
@@ -749,17 +760,17 @@ export function Containers() {
       {/* 容器列表 */}
       <div className={cn(
         viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
           : "space-y-4"
       )}>
         {containers.map((container) => (
           <div key={container.id} className={cn(
-            "card relative overflow-hidden",
-            viewMode === 'grid' ? "p-4" : "p-6"
+            "card relative overflow-hidden group transition-all duration-200 hover:shadow-lg border border-gray-200 dark:border-gray-700 rounded-2xl",
+            viewMode === 'grid' ? "p-6" : "p-6"
           )}>
             {/* 背景进度条 */}
             {containerActions[container.id]?.loading && containerActions[container.id]?.action === 'update' && (
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none rounded-2xl overflow-hidden">
                 <div 
                   className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-primary-500/30 via-primary-400/30 to-primary-500/30 transition-all duration-500 ease-out"
                   style={{
@@ -783,24 +794,25 @@ export function Containers() {
             <div className={cn(
               "relative z-10",
               viewMode === 'grid' 
-                ? "flex flex-col space-y-3" 
+                ? "flex flex-col space-y-4" 
                 : "flex items-center justify-between gap-4"
             )}>
               {/* 左侧：选择框和图标 */}
               <div className={cn(
-                "flex items-center",
-                viewMode === 'grid' ? "space-x-3" : "space-x-3"
+                "flex items-start",
+                viewMode === 'grid' ? "space-x-4" : "space-x-4"
               )}>
                 {isBatchMode && (
-                  <div className="flex-shrink-0 mt-0.5">
+                  <div className="flex-shrink-0 mt-1.5">
                     <input
                       type="checkbox"
                       checked={selectedContainers.includes(container.id)}
                       onChange={() => toggleContainerSelection(container.id)}
-                      className="h-5 w-5 text-primary-600 rounded focus:ring-primary-500"
+                      className="h-5 w-5 text-primary-600 rounded focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                     />
                   </div>
                 )}
+                <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     {(() => {
                       // 获取镜像logo数据
@@ -810,91 +822,102 @@ export function Containers() {
 
                       // 如果容器没有自定义图标，则查找镜像图标
                       if (!iconUrl && container.usingImage) {
-                      // 首先尝试使用内置logo配置
-                      const builtInLogo = getImageLogo(container.usingImage, imageLogos);
-                      if (builtInLogo) {
-                        iconUrl = builtInLogo;
-                      } else {
-                        // 如果没有内置logo，则使用原来的匹配逻辑
-                        for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
-                          // 检查容器使用的镜像是否包含镜像名称
-                          // 镜像名称格式可能是 "repository" 或 "repository:tag"
-                          if (container.usingImage.startsWith(imageName) || 
-                              container.usingImage.includes(`${imageName}:`)) {
-                            iconUrl = logoUrl;
-                            break;
+                        // 首先尝试使用内置logo配置
+                        const builtInLogo = getImageLogo(container.usingImage, imageLogos);
+                        if (builtInLogo) {
+                          iconUrl = builtInLogo;
+                        } else {
+                          // 如果没有内置logo，则使用原来的匹配逻辑
+                          for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
+                            // 检查容器使用的镜像是否包含镜像名称
+                            // 镜像名称格式可能是 "repository" 或 "repository:tag"
+                            if (container.usingImage.startsWith(imageName) || 
+                                container.usingImage.includes(`${imageName}:`)) {
+                              iconUrl = logoUrl;
+                              break;
+                            }
                           }
                         }
                       }
-                    }
-                    
-                    // 根据图标URL显示相应内容
-                    if (iconUrl) {
-                      return (
-                        <img 
-                          src={iconUrl} 
-                          alt={container.name} 
-                          className="h-10 w-10 rounded-lg object-cover"
-                          onError={(e) => {
-                            // 如果图片加载失败，显示默认图标
-                            e.target.style.display = 'none';
-                            e.target.parentElement.innerHTML = `
-                              <div class="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white">
-                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-                                </svg>
-                              </div>
-                            `;
-                          }}
-                        />
-                      );
-                    } else {
-                      return (
-                        <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                          <Package className="h-6 w-6 text-white" />
-                        </div>
-                      );
-                    }
-                  })()}
+                      
+                      // 根据图标URL显示相应内容
+                      if (iconUrl) {
+                        return (
+                          <img 
+                            src={iconUrl} 
+                            alt={container.name} 
+                            className="h-14 w-14 rounded-2xl object-cover shadow-md"
+                            onError={(e) => {
+                              // 如果图片加载失败，显示默认图标
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = `
+                                <div class="h-14 w-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7 text-white">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                                  </svg>
+                                </div>
+                              `;
+                            }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <div className="h-14 w-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+                            <Package className="h-7 w-7 text-white" />
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                  
+                  {/* 状态指示器竖线 */}
+                  <div className="flex flex-col items-center h-full pt-1">
+                    <div className={cn(
+                      "w-1 h-14 rounded-full",
+                      getStatusIndicatorColor(container.status)
+                    )}></div>
+                  </div>
                 </div>
               </div>
                 
                 {/* 中间：容器信息（垂直排列在列表视图） */}
                 <div className={cn(
                   "flex-1 min-w-0",
-                  viewMode === 'grid' ? "flex flex-col space-y-3" : "flex flex-col justify-center gap-1"
+                  viewMode === 'grid' ? "flex flex-col space-y-3" : "flex flex-col justify-center gap-1.5"
                 )}>
                   <div className="flex items-center gap-2">
                     <h3 
                       className={cn(
                         "font-semibold text-gray-900 dark:text-white truncate cursor-pointer hover:underline",
-                        viewMode === 'grid' ? "text-base" : "text-sm"
+                        viewMode === 'grid' ? "text-lg" : "text-lg"
                       )}
                       onClick={() => setSelectedContainer(container)}
                     >
                       {container.name}
                     </h3>
                     {container.haveUpdate && (
-                      <span className="badge-warning text-xs flex-shrink-0">可更新</span>
+                      <span className="badge-warning text-xs flex-shrink-0 px-2 py-0.5 rounded-full">可更新</span>
                     )}
                   </div>
                   
                   <p className={cn(
                     "text-gray-500 dark:text-gray-400 truncate",
-                    viewMode === 'grid' ? "text-sm" : "text-xs"
+                    viewMode === 'grid' ? "text-sm" : "text-sm"
                   )}>
                     {container.usingImage}
                   </p>
                   
                   {viewMode === 'list' && container.status === 'running' && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      运行时间: {container.runningTime}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{container.runningTime}</span>
                     </p>
                   )}
                   
                   {containerActions[container.id]?.loading && containerActions[container.id]?.progress && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
-                      {containerActions[container.id].progress}
+                    <p className="text-xs text-blue-600 dark:text-blue-400 truncate flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>{containerActions[container.id].progress}</span>
                     </p>
                   )}
                   
@@ -916,19 +939,19 @@ export function Containers() {
 
               {/* 右侧：状态和操作按钮 */}
               <div className={cn(
-                "flex items-center flex-shrink-0",
+                "flex items-start flex-shrink-0",
                 viewMode === 'grid' 
-                  ? "flex-col gap-3 pt-3 border-t border-gray-200 dark:border-gray-700 w-full"
-                  : "gap-2 flex-row items-center"
+                  ? "flex-col gap-3 pt-2 border-t border-gray-200 dark:border-gray-700 w-full" 
+                  : "gap-2 flex-row"
               )}>
                 {/* 状态徽章 */}
                 {viewMode === 'list' && (
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 mt-1">
                     {getStatusBadge(container.status)}
                   </div>
                 )}
                 {viewMode === 'grid' && (
-                  <div className="w-full">
+                  <div className="w-full flex justify-center">
                     {getStatusBadge(container.status)}
                   </div>
                 )}
@@ -936,11 +959,13 @@ export function Containers() {
                 {/* 操作按钮 */}
                 {!isBatchMode && (
                   <div className={cn(
-                    "flex items-center flex-shrink-0",
-                    viewMode === 'grid' ? "flex-wrap gap-2 w-full" : "gap-1 flex-row"
+                    "flex items-center flex-shrink-0 transition-all duration-200",
+                    viewMode === 'grid' 
+                      ? "flex-wrap gap-2 w-full justify-center" 
+                      : "gap-1.5 flex-row opacity-0 group-hover:opacity-100"
                   )}>
                     {containerActions[container.id]?.loading ? (
-                      <div className="flex items-center space-x-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                      <div className="flex items-center space-x-2 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                         <RefreshCw className="h-4 w-4 animate-spin text-primary-600 dark:text-primary-400" />
                         <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
                           {containerActions[container.id].action === 'start' && '启动中'}
@@ -956,62 +981,62 @@ export function Containers() {
                             <button
                               onClick={() => handleContainerAction(container.id, 'stop')}
                               className={cn(
-                                "group relative text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200 flex items-center",
-                                viewMode === 'grid' ? "px-2 py-1.5 space-x-1" : "px-3 py-2 space-x-1.5"
+                                "group relative text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all duration-200 flex items-center shadow-sm hover:shadow",
+                                viewMode === 'grid' ? "px-4 py-2.5 space-x-1.5" : "px-3 py-2 space-x-1"
                               )}
                               title="停止容器"
                             >
-                              <Square className="h-4 w-4" />
-                              <span className="text-xs font-medium">停止</span>
+                              <Square className="h-5 w-5" />
+                              <span className={cn("text-sm font-medium", viewMode === 'list' && "sr-only")}>停止</span>
                             </button>
                             <button
                               onClick={() => handleContainerAction(container.id, 'restart')}
                               className={cn(
-                                "group relative text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 flex items-center",
-                                viewMode === 'grid' ? "px-2 py-1.5 space-x-1" : "px-3 py-2 space-x-1.5"
+                                "group relative text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-200 flex items-center shadow-sm hover:shadow",
+                                viewMode === 'grid' ? "px-4 py-2.5 space-x-1.5" : "px-3 py-2 space-x-1"
                               )}
                               title="重启容器"
                             >
-                              <RotateCcw className="h-4 w-4" />
-                              <span className="text-xs font-medium">重启</span>
+                              <RotateCcw className="h-5 w-5" />
+                              <span className={cn("text-sm font-medium", viewMode === 'list' && "sr-only")}>重启</span>
                             </button>
                           </>
                         ) : (
                           <button
                             onClick={() => handleContainerAction(container.id, 'start')}
                             className={cn(
-                              "group relative text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all duration-200 flex items-center",
-                              viewMode === 'grid' ? "px-2 py-1.5 space-x-1" : "px-3 py-2 space-x-1.5"
+                              "group relative text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-xl transition-all duration-200 flex items-center shadow-sm hover:shadow",
+                              viewMode === 'grid' ? "px-4 py-2.5 space-x-1.5" : "px-3 py-2 space-x-1"
                             )}
                             title="启动容器"
                           >
-                            <Play className="h-4 w-4" />
-                            <span className="text-xs font-medium">启动</span>
+                            <Play className="h-5 w-5" />
+                            <span className={cn("text-sm font-medium", viewMode === 'list' && "sr-only")}>启动</span>
                           </button>
                         )}
 
                         <button
                           onClick={() => handleUpdateContainer(container.id)}
                           className={cn(
-                            "group relative text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-all duration-200 flex items-center",
-                            viewMode === 'grid' ? "px-2 py-1.5 space-x-1" : "px-3 py-2 space-x-1.5"
+                            "group relative text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-xl transition-all duration-200 flex items-center shadow-sm hover:shadow",
+                            viewMode === 'grid' ? "px-4 py-2.5 space-x-1.5" : "px-3 py-2 space-x-1"
                           )}
                           title="更新容器"
                         >
-                          <Upload className="h-4 w-4" />
-                          <span className="text-xs font-medium">更新</span>
+                          <Upload className="h-5 w-5" />
+                          <span className={cn("text-sm font-medium", viewMode === 'list' && "sr-only")}>更新</span>
                         </button>
 
                         <button
                           onClick={() => setSelectedContainer(container)}
                           className={cn(
-                            "group relative text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 flex items-center",
-                            viewMode === 'grid' ? "px-2 py-1.5 space-x-1" : "px-3 py-2 space-x-1.5"
+                            "group relative text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 flex items-center shadow-sm hover:shadow",
+                            viewMode === 'grid' ? "px-4 py-2.5 space-x-1.5" : "px-3 py-2 space-x-1"
                           )}
                           title="查看详情"
                         >
-                          <Info className="h-4 w-4" />
-                          <span className="text-xs font-medium">详情</span>
+                          <Info className="h-5 w-5" />
+                          <span className={cn("text-sm font-medium", viewMode === 'list' && "sr-only")}>详情</span>
                         </button>
                       </>
                     )}
@@ -1302,13 +1327,13 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         <img 
           src={iconUrl} 
           alt={currentContainer.name} 
-          className="h-10 w-10 rounded-lg object-cover"
+          className="h-12 w-12 rounded-xl object-cover"
           onError={(e) => {
             e.target.style.display = 'none';
             const parent = e.target.parentElement;
             if (parent) {
               parent.innerHTML = `
-                <div class="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div class="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -1322,7 +1347,7 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
       );
     } else {
       return (
-        <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
           <Package className="h-6 w-6 text-white" />
         </div>
       );
@@ -1331,7 +1356,7 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         {/* 弹窗头部 */}
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex justify-between items-center">
