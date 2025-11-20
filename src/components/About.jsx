@@ -6,12 +6,12 @@ export function About() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 md:p-8 transition-colors duration-200">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">关于 Docker Copilot</h1>
-          <p className="text-gray-600 dark:text-gray-400">一些个人的碎碎念</p>
         </div>
 
         <div className="space-y-6 text-gray-800 dark:text-gray-200">
           <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-6 transition-colors duration-200">
             <p className="mb-4 leading-relaxed">
+              一些个人的碎碎念，
               首先非常感谢大家自项目开始以来的使用、建议、鼓励和支持，然后要感谢绿联对本项目的支持。
               没有大家的这些反馈DC不会是今天的这个样子。他是属于我们共同的作品，我会继续尽力去维护好这个项目。
             </p>
@@ -43,7 +43,7 @@ export function About() {
                 <div className="flex flex-col items-center">
                   <div className="rounded-xl overflow-hidden w-40 h-40 flex items-center justify-center bg-white dark:bg-gray-800 transition-colors duration-200">
                     <img 
-                      src="/src/assets/wechat.jpg" 
+                      src="/wechat.jpg" 
                       alt="微信赞赏码" 
                       className="w-full h-full object-contain"
                     />
@@ -53,7 +53,7 @@ export function About() {
                 <div className="flex flex-col items-center">
                   <div className="rounded-xl overflow-hidden w-40 h-40 flex items-center justify-center bg-white dark:bg-gray-800 transition-colors duration-200">
                     <img 
-                      src="/src/assets/alipay.jpg" 
+                      src="/alipay.jpg" 
                       alt="支付宝赞赏码" 
                       className="w-full h-full object-contain"
                     />
