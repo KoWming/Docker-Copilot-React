@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, Grid } from 'lucide-react'
+import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, Grid, X } from 'lucide-react'
 import { imageAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
 import { getImageLogo } from '../config/imageLogos.js'
@@ -34,9 +34,16 @@ export function Images() {
     type: '', 
     images: [] 
   }) // 清理确认模态框状态
-
-
-
+  
+  // 自定义确认弹窗状态
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    type: 'info' // info, warning, danger
+  })
 
   const fetchImages = async () => {
     try {
@@ -98,25 +105,53 @@ export function Images() {
 
   const handleDeleteImage = async (imageId, force = false) => {
     try {
-      // 添加确认提示
-      const confirmMessage = force 
-        ? '确定要强制删除此镜像吗？这将删除正在使用的镜像！' 
-        : '确定要删除此镜像吗？';
+      // Check if this is the protected image (only protect when not force deleting)
+      const imageToDelete = images.find(img => img.id === imageId);
+      const protectedImage = '0nlylty/dockercopilot';
       
-      if (!window.confirm(confirmMessage)) {
+      if (!force && imageToDelete && imageToDelete.name.includes(protectedImage)) {
+        // 使用自定义弹窗替换alert
+        setConfirmModal({
+          isOpen: true,
+          title: '操作禁止',
+          message: '无法删除受保护的系统镜像',
+          onConfirm: () => setConfirmModal({ isOpen: false }),
+          onCancel: null,
+          type: 'info'
+        });
         return;
       }
 
-      setIsLoading(true)
-      
-      await imageAPI.deleteImage(imageId, force)
-      // 刷新镜像列表
-      fetchImages()
+      // 使用自定义弹窗替换confirm
+      setConfirmModal({
+        isOpen: true,
+        title: '确认删除',
+        message: force 
+          ? '确定要强制删除此镜像吗？这将删除正在使用的镜像！' 
+          : '确定要删除此镜像吗？',
+        onConfirm: async () => {
+          setConfirmModal({ isOpen: false });
+          setIsLoading(true);
+          
+          try {
+            await imageAPI.deleteImage(imageId, force);
+            // 刷新镜像列表
+            fetchImages();
+          } catch (error) {
+            console.error('删除镜像失败:', error);
+            const errorMsg = error.response?.data?.msg || error.message || '删除镜像失败';
+            setError(errorMsg);
+            setIsLoading(false);
+          }
+        },
+        onCancel: () => setConfirmModal({ isOpen: false }),
+        type: force ? 'danger' : 'warning'
+      });
     } catch (error) {
-      console.error('删除镜像失败:', error)
-      const errorMsg = error.response?.data?.msg || error.message || '删除镜像失败'
-      setError(errorMsg)
-      setIsLoading(false)
+      console.error('删除镜像失败:', error);
+      const errorMsg = error.response?.data?.msg || error.message || '删除镜像失败';
+      setError(errorMsg);
+      setIsLoading(false);
     }
   }
 
@@ -161,35 +196,76 @@ export function Images() {
     try {
       if (selectedImages.length === 0) return
 
-      const confirmMessage = force 
-        ? `确定要强制删除选中的 ${selectedImages.length} 个镜像吗？这将删除正在使用的镜像！` 
-        : `确定要删除选中的 ${selectedImages.length} 个镜像吗？`
+      // Filter out protected images only when not force deleting
+      const protectedImage = '0nlylty/dockercopilot';
+      let filteredImages = selectedImages;
+      
+      if (!force) {
+        filteredImages = selectedImages.filter(imageId => {
+          const image = images.find(img => img.id === imageId);
+          return image && !image.name.includes(protectedImage);
+        });
 
-      if (!window.confirm(confirmMessage)) {
-        return
+        // If any images were filtered out, show a message
+        if (filteredImages.length < selectedImages.length) {
+          const protectedCount = selectedImages.length - filteredImages.length;
+          // 使用自定义弹窗替换alert
+          setConfirmModal({
+            isOpen: true,
+            title: '操作提示',
+            message: `跳过了 ${protectedCount} 个受保护的系统镜像`,
+            onConfirm: () => setConfirmModal({ isOpen: false }),
+            onCancel: null,
+            type: 'info'
+          });
+        }
       }
 
-      setIsLoading(true)
-      
-      // 批量删除镜像
-      const deletePromises = selectedImages.map(imageId => 
-        imageAPI.deleteImage(imageId, force)
-      )
-      
-      await Promise.all(deletePromises)
-      
-      // 清空选择并刷新列表
-      setSelectedImages([])
-      setIsMultiSelectMode(false)
-      fetchImages()
-      
-      // 显示成功消息
-      console.log(`${selectedImages.length} 个镜像删除成功`)
+      if (filteredImages.length === 0) {
+        return; // No images to delete
+      }
+
+      // 使用自定义弹窗替换confirm
+      setConfirmModal({
+        isOpen: true,
+        title: '确认批量删除',
+        message: force 
+          ? `确定要强制删除选中的 ${filteredImages.length} 个镜像吗？这将删除正在使用的镜像！` 
+          : `确定要删除选中的 ${filteredImages.length} 个镜像吗？`,
+        onConfirm: async () => {
+          setConfirmModal({ isOpen: false });
+          setIsLoading(true);
+          
+          try {
+            // 批量删除镜像
+            const deletePromises = filteredImages.map(imageId => 
+              imageAPI.deleteImage(imageId, force)
+            );
+            
+            await Promise.all(deletePromises);
+            
+            // 清空选择并刷新列表
+            setSelectedImages([]);
+            setIsMultiSelectMode(false);
+            fetchImages();
+            
+            // 显示成功消息
+            console.log(`${filteredImages.length} 个镜像删除成功`);
+          } catch (error) {
+            console.error('批量删除镜像失败:', error);
+            const errorMsg = error.response?.data?.msg || error.message || '批量删除镜像失败';
+            setError(errorMsg);
+            setIsLoading(false);
+          }
+        },
+        onCancel: () => setConfirmModal({ isOpen: false }),
+        type: force ? 'danger' : 'warning'
+      });
     } catch (error) {
-      console.error('批量删除镜像失败:', error)
-      const errorMsg = error.response?.data?.msg || error.message || '批量删除镜像失败'
-      setError(errorMsg)
-      setIsLoading(false)
+      console.error('批量删除镜像失败:', error);
+      const errorMsg = error.response?.data?.msg || error.message || '批量删除镜像失败';
+      setError(errorMsg);
+      setIsLoading(false);
     }
   }
 
@@ -198,11 +274,13 @@ export function Images() {
     let imagesToPrune = []
     
     if (type === 'dangling') {
-      // 获取无tag的镜像
-      imagesToPrune = images.filter(img => img.tag === 'None' || img.tag === '<none>')
+      // 获取无tag的镜像 (still protect the image even when pruning)
+      imagesToPrune = images.filter(img => (img.tag === 'None' || img.tag === '<none>') && !img.name.includes('0nlylty/dockercopilot'))
     } else if (type === 'unused') {
-      // 获取未使用的镜像
+      // 获取未使用的镜像 (allow pruning of unused protected images)
       imagesToPrune = images.filter(img => !img.inUsed)
+      // But still protect the specific protected image
+      imagesToPrune = imagesToPrune.filter(img => !img.name.includes('0nlylty/dockercopilot'))
     }
     
     setPruneModal({
@@ -283,6 +361,55 @@ export function Images() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* 自定义确认弹窗 */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {confirmModal.title}
+              </h3>
+              <button 
+                onClick={() => {
+                  if (confirmModal.onCancel) confirmModal.onCancel();
+                  setConfirmModal({ isOpen: false });
+                }}
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                {confirmModal.message}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  if (confirmModal.onCancel) confirmModal.onCancel();
+                  setConfirmModal({ isOpen: false });
+                }}
+                className="btn-secondary"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmModal.onConfirm) confirmModal.onConfirm();
+                }}
+                className={cn(
+                  "btn-primary",
+                  confirmModal.type === 'danger' && "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                )}
+              >
+                确认
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 清理确认模态框 */}
       {pruneModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

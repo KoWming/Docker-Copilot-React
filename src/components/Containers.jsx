@@ -38,6 +38,15 @@ export function Containers() {
   const [viewMode, setViewMode] = useState(() => {
     return localStorage.getItem('containerViewMode') || 'list'
   })
+  // 自定义确认弹窗状态
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    type: 'info' // info, warning, danger
+  })
 
   // 切换视图模式
   const toggleViewMode = (mode) => {
@@ -144,8 +153,30 @@ export function Containers() {
   // 批量操作处理函数
   const handleBatchAction = async (action) => {
     try {
+      // Filter out containers using the protected image
+      const protectedImage = '0nlylty/dockercopilot';
+      const filteredContainers = selectedContainers.filter(containerId => {
+        const container = containers.find(c => c.id === containerId);
+        return container && !container.usingImage.includes(protectedImage);
+      });
+
+      // If any containers were filtered out, show a message
+      if (filteredContainers.length < selectedContainers.length) {
+        const protectedCount = selectedContainers.length - filteredContainers.length;
+        // 使用自定义弹窗替换console.log
+        setConfirmModal({
+          isOpen: true,
+          title: '操作提示',
+          message: `跳过了 ${protectedCount} 个使用受保护镜像的容器`,
+          onConfirm: () => setConfirmModal({ isOpen: false }),
+          onCancel: null,
+          type: 'info'
+        });
+      }
+
+      // Use filtered containers for the operations
       // 为所有选中的容器设置加载状态
-      selectedContainers.forEach(containerId => {
+      filteredContainers.forEach(containerId => {
         setContainerActions(prev => ({
           ...prev,
           [containerId]: { action, loading: true }
@@ -158,7 +189,7 @@ export function Containers() {
           if (!oldData) return oldData
           
           return oldData.map(container => {
-            if (selectedContainers.includes(container.id)) {
+            if (filteredContainers.includes(container.id)) {
               let newStatus = container.status
               switch (action) {
                 case 'start':
@@ -181,7 +212,7 @@ export function Containers() {
       }
       
       // 对每个选中的容器执行操作
-      for (const containerId of selectedContainers) {
+      for (const containerId of filteredContainers) {
         try {
           const container = containers.find(c => c.id === containerId)
           
@@ -253,6 +284,16 @@ export function Containers() {
           return newState
         })
       })
+      
+      // 使用自定义弹窗显示错误信息
+      setConfirmModal({
+        isOpen: true,
+        title: '操作失败',
+        message: '批量操作失败: ' + (error.response?.data?.msg || error.message || '未知错误'),
+        onConfirm: () => setConfirmModal({ isOpen: false }),
+        onCancel: null,
+        type: 'danger'
+      });
     }
   }
 
@@ -341,6 +382,16 @@ export function Containers() {
                          '2. 使用不同的容器名称进行更新\n' +
                          '3. 先停止并重命名当前容器，再进行更新操作';
         }
+        
+        // 使用自定义弹窗显示错误信息
+        setConfirmModal({
+          isOpen: true,
+          title: '更新失败',
+          message: errorMessage,
+          onConfirm: () => setConfirmModal({ isOpen: false }),
+          onCancel: null,
+          type: 'danger'
+        });
       }
     }
   }
@@ -539,6 +590,56 @@ export function Containers() {
           100% { background-position: 200% 0; }
         }
       `}</style>
+      
+      {/* 自定义确认弹窗 */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {confirmModal.title}
+              </h3>
+              <button 
+                onClick={() => {
+                  if (confirmModal.onCancel) confirmModal.onCancel();
+                  setConfirmModal({ isOpen: false });
+                }}
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                {confirmModal.message}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  if (confirmModal.onCancel) confirmModal.onCancel();
+                  setConfirmModal({ isOpen: false });
+                }}
+                className="btn-secondary"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmModal.onConfirm) confirmModal.onConfirm();
+                }}
+                className={cn(
+                  "btn-primary",
+                  confirmModal.type === 'danger' && "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                )}
+              >
+                确认
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 页面标题和操作 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
