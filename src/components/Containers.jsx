@@ -545,8 +545,12 @@ export function Containers() {
   }
 
   const getStatusBadge = (status) => {
+    // 如果是运行中状态，不显示徽章，只返回 null
+    if (status?.toLowerCase() === 'running') {
+      return null
+    }
+    
     const statusConfig = {
-      running: { label: '运行中', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
       stopped: { label: '已停止', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
       restarting: { label: '重启中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
       paused: { label: '已暂停', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' }
@@ -839,7 +843,7 @@ export function Containers() {
                           }
                         }
                       }
-                      
+                     
                       // 根据图标URL显示相应内容
                       if (iconUrl) {
                         return (
@@ -1281,8 +1285,12 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
   // 获取状态徽章组件
   const getStatusBadge = (status) => {
+    // 如果是运行中状态，不显示徽章，只返回 null
+    if (status?.toLowerCase() === 'running') {
+      return null
+    }
+    
     const statusConfig = {
-      running: { label: '运行中', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
       stopped: { label: '已停止', className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
       restarting: { label: '重启中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
       paused: { label: '已暂停', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }
@@ -1295,6 +1303,18 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         {config.label}
       </span>
     )
+  }
+
+  // 获取状态指示器颜色
+  const getStatusIndicatorColor = (status) => {
+    const statusConfig = {
+      running: 'bg-green-500',
+      stopped: 'bg-red-500',
+      restarting: 'bg-yellow-500',
+      paused: 'bg-blue-500'
+    }
+    
+    return statusConfig[status?.toLowerCase()] || 'bg-gray-500'
   }
 
   // 获取容器图标 - 与列表显示逻辑一致
@@ -1364,13 +1384,22 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">容器详情</h3>
               <div className="flex items-center mt-1">
                 {getContainerIcon()}
+                {/* 状态指示器竖线 */}
+                <div className="flex flex-col items-center h-full ml-3">
+                  <div className={cn(
+                    "w-1 h-8 rounded-full",
+                    getStatusIndicatorColor(currentContainer.status)
+                  )}></div>
+                </div>
                 <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {currentContainer.name}
-                  </span>
-                  <div className="flex items-center mt-1">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {currentContainer.name}
+                    </span>
                     {getStatusBadge(currentContainer.status)}
-                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {currentContainer.id.substring(0, 12)}
                     </span>
                   </div>
