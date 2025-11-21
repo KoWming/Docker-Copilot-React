@@ -6,24 +6,24 @@
 
 export const builtInImageLogos = {
   "xylplm/media-saber": "https://icon.xiaoge.org/images/docker/MediaSaber.png",
-  "jxxghp/moviepilot-v2": "/src/config/image/146.png",
+  "jxxghp/moviepilot-v2": "/config/image/146.png",
   "mtphotos/mt-photos": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
   "kqstone/mt-photos-insightface-unofficial": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
   "mtphotos/mt-photos-ai": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
-  "corentinth/it-tools": "/src/config/image/IT-Tools_w7z24.webp",
+  "corentinth/it-tools": "/config/image/IT-Tools_w7z24.webp",
   "0nlylty/dockercopilot": "https://icon.xiaoge.org/images/docker/DockerCopilot-3.png",
-  "xream/sub-store": "/src/config/image/Sub-Store.webp",
-  "nyanmisaka/jellyfin": "/src/config/image/132.png",
-  "redis": "/src/config/image/165.png",
-  "postgres": "/src/config/image/159.png",
-  "hslr/sun-panel": "/src/config/image/175.png",
+  "xream/sub-store": "/config/image/Sub-Store.webp",
+  "nyanmisaka/jellyfin": "/config/image/132.png",
+  "redis": "/config/image/165.png",
+  "postgres": "/config/image/159.png",
+  "hslr/sun-panel": "/config/image/175.png",
   "whyour/qinglong": "https://qn.whyour.cn/favicon.svg",
-  "linuxserver/transmission": "/src/config/image/189.png",
-  "linuxserver/qbittorrent": "/src/config/image/QBittorrent_Q41Q0.webp",
-  "imgzcq/fndesk": "/src/config/image/718.png",
-  "qiaokes/fntv-record-view": "/src/config/image/718.png",
-  "easychen/cookiecloud": "/src/config/image/100.png",
-  "gdy666/lucky": "/src/config/image/4.png"  
+  "linuxserver/transmission": "/config/image/189.png",
+  "linuxserver/qbittorrent": "/config/image/QBittorrent_Q41Q0.webp",
+  "imgzcq/fndesk": "/config/image/718.png",
+  "qiaokes/fntv-record-view": "/config/image/718.png",
+  "easychen/cookiecloud": "/config/image/100.png",
+  "gdy666/lucky": "/config/image/4.png"  
 };
 
 // 获取镜像的logo URL
