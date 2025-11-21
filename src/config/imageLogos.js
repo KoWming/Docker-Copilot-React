@@ -6,24 +6,24 @@
 
 export const builtInImageLogos = {
   "xylplm/media-saber": "https://icon.xiaoge.org/images/docker/MediaSaber.png",
-  "jxxghp/moviepilot-v2": "/src/config/images/146.png",
+  "jxxghp/moviepilot-v2": "/config/images/146.png",
   "mtphotos/mt-photos": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
   "kqstone/mt-photos-insightface-unofficial": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
   "mtphotos/mt-photos-ai": "https://icon.xiaoge.org/images/docker/MT-Photos.png",
-  "corentinth/it-tools": "/src/config/images/IT-Tools_w7z24.webp",
+  "corentinth/it-tools": "/config/images/IT-Tools_w7z24.webp",
   "0nlylty/dockercopilot": "https://icon.xiaoge.org/images/docker/DockerCopilot-3.png",
-  "xream/sub-store": "/src/config/images/Sub-Store.webp",
-  "nyanmisaka/jellyfin": "/src/config/images/132.png",
-  "redis": "/src/config/images/165.png",
-  "postgres": "/src/config/images/159.png",
-  "hslr/sun-panel": "/src/config/images/175.png",
+  "xream/sub-store": "/config/images/Sub-Store.webp",
+  "nyanmisaka/jellyfin": "/config/images/132.png",
+  "redis": "/config/images/165.png",
+  "postgres": "/config/images/159.png",
+  "hslr/sun-panel": "/config/images/175.png",
   "whyour/qinglong": "https://qn.whyour.cn/favicon.svg",
-  "linuxserver/transmission": "/src/config/images/189.png",
-  "linuxserver/qbittorrent": "/src/config/images/QBittorrent_Q41Q0.webp",
-  "imgzcq/fndesk": "/src/config/images/718.png",
-  "qiaokes/fntv-record-view": "/src/config/images/718.png",
-  "easychen/cookiecloud": "/src/config/images/100.png",
-  "gdy666/lucky": "/src/config/images/4.png"  
+  "linuxserver/transmission": "/config/images/189.png",
+  "linuxserver/qbittorrent": "/config/images/QBittorrent_Q41Q0.webp",
+  "imgzcq/fndesk": "/config/images/718.png",
+  "qiaokes/fntv-record-view": "/config/images/718.png",
+  "easychen/cookiecloud": "/config/images/100.png",
+  "gdy666/lucky": "/config/images/4.png"  
 };
 
 // 获取镜像的logo URL
@@ -64,7 +64,7 @@ export const availableImageFiles = [
 
 // 快速映射函数：将图片文件名映射到完整的URL路径
 export const mapImageFile = (fileName) => {
-  return `/src/config/images/${fileName}`;
+  return `/config/images/${fileName}`;
 };
 
 // 批量映射函数：通过图片文件名快速创建镜像logo映射
