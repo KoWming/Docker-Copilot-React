@@ -64,7 +64,7 @@ export function Icons() {
   // 过滤图标
   const getFilteredIcons = () => {
     let icons = Object.entries(builtInImageLogos)
-    
+
     // 按分类过滤
     if (selectedCategory !== 'all') {
       icons = icons.filter(([name, url]) => {
@@ -86,14 +86,14 @@ export function Icons() {
         }
       })
     }
-    
+
     // 按搜索词过滤
     if (searchTerm) {
-      icons = icons.filter(([name]) => 
+      icons = icons.filter(([name]) =>
         name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-    
+
     return icons
   }
 
@@ -103,8 +103,8 @@ export function Icons() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* 页面头部 */}
-        <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">图标库</h2>
+      <div className="px-4 sm:px-6 py-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">图标库</h2>
         <p className="text-gray-600 dark:text-gray-400">浏览和管理Docker镜像图标</p>
       </div>
 
@@ -131,16 +131,16 @@ export function Icons() {
           >
             {categories.map(category => (
               <option key={category} value={category}>
-                {category === 'all' ? '全部分类' : 
-                 category === 'docker' ? 'Docker应用' :
-                 category === 'nas' ? 'NAS系统' :
-                 category === 'pt' ? 'PT站点' :
-                 category === 'cloud' ? '云服务商' :
-                 category === 'website' ? '网站服务' : category}
+                {category === 'all' ? '全部分类' :
+                  category === 'docker' ? 'Docker应用' :
+                    category === 'nas' ? 'NAS系统' :
+                      category === 'pt' ? 'PT站点' :
+                        category === 'cloud' ? '云服务商' :
+                          category === 'website' ? '网站服务' : category}
               </option>
             ))}
           </select>
-          
+
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               共 {filteredIcons.length} 个
@@ -168,8 +168,8 @@ export function Icons() {
         {filteredIcons.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {filteredIcons.map(([name, url]) => (
-              <div 
-                key={name} 
+              <div
+                key={name}
                 className="group cursor-pointer"
                 onClick={() => setSelectedIcon({ name, url })}
               >
@@ -190,23 +190,23 @@ export function Icons() {
                       }}
                       className="absolute -top-1 -right-1 p-1.5 rounded-full bg-white dark:bg-gray-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Star 
+                      <Star
                         className={cn(
                           "h-4 w-4",
-                          favorites.includes(name) 
-                            ? "text-yellow-500 fill-current" 
+                          favorites.includes(name)
+                            ? "text-yellow-500 fill-current"
                             : "text-gray-300 hover:text-yellow-500"
-                        )} 
+                        )}
                       />
                     </button>
                   </div>
-                  
+
                   <div className="text-center w-full">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
                       {name}
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 w-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => {
@@ -250,7 +250,7 @@ export function Icons() {
             </p>
           </div>
         )}
-      </div>      
+      </div>
       {/* 图标详情弹窗 */}
       {selectedIcon && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -267,7 +267,7 @@ export function Icons() {
                   <X className="h-6 w-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex justify-center">
                   <img
@@ -276,7 +276,7 @@ export function Icons() {
                     className="w-32 h-32 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     图标名称
@@ -285,7 +285,7 @@ export function Icons() {
                     {selectedIcon.name}
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     图标链接
@@ -306,7 +306,7 @@ export function Icons() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={() => window.open(selectedIcon.url, '_blank')}
