@@ -11,7 +11,7 @@ import {
   X,
   Info
 } from 'lucide-react'
-import { containerAPI, progressAPI } from '../api/client.js'
+import { containerAPI, progressAPI, imageAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getImageLogo } from '../config/imageLogos.js'
@@ -1131,6 +1131,8 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
   const [isActionProcessing, setIsActionProcessing] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [currentContainer, setCurrentContainer] = useState(container)
+  const fileInputRef = React.useRef(null)
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false)
 
   // 当容器切换时，更新表单字段的值
   React.useEffect(() => {
@@ -1185,6 +1187,78 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
     return () => clearInterval(interval);
   }, [container.id]);
+
+  const handleIconUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // 限制文件大小 (例如 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setConfirmModal({
+        isOpen: true,
+        title: '上传失败',
+        message: '图标文件大小不能超过 2MB',
+        onConfirm: () => setConfirmModal({ isOpen: false }),
+        onCancel: null,
+        type: 'danger'
+      })
+      event.target.value = '' // 重置 input
+      return
+    }
+
+    try {
+      setIsUploadingIcon(true)
+      // 使用容器当前的镜像名作为 Key
+      // 如果有自定义镜像名配置(容器更新时可能改变)，优先使用新的
+      const targetImageName = imageNameAndTag || currentContainer.usingImage
+
+      const response = await imageAPI.uploadIcon(file, targetImageName)
+
+      if (response.data.code === 200 || response.data.code === 0) {
+        // 上传成功，更新 localStorage
+        const filename = response.data.data // 后端返回的文件名
+        if (filename) {
+          const newPath = `/src/config/image/${filename}`
+          const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}')
+
+          // 更新映射: 镜像名 -> 新路径
+          imageLogos[targetImageName] = newPath
+          localStorage.setItem('docker_copilot_image_logos', JSON.stringify(imageLogos))
+
+          // 强制更新当前容器视图
+          setCurrentContainer(prev => ({
+            ...prev,
+            iconUrl: newPath
+          }))
+
+          // 触发全局事件以便其他组件（如列表）更新
+          window.dispatchEvent(new Event('storage'))
+
+          // 无效化查询以刷新列表
+          await queryClient.invalidateQueries(['containers'])
+
+          console.log('✅ 图标上传成功并已应用')
+        }
+      } else {
+        throw new Error(response.data.msg || '上传失败')
+      }
+    } catch (error) {
+      console.error('图标上传失败:', error)
+      setConfirmModal({
+        isOpen: true,
+        title: '上传失败',
+        message: '图标上传失败: ' + (error.response?.data?.msg || error.message),
+        onConfirm: () => setConfirmModal({ isOpen: false }),
+        onCancel: null,
+        type: 'danger'
+      })
+    } finally {
+      setIsUploadingIcon(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   const handleContainerAction = async (action) => {
     try {
@@ -1323,47 +1397,73 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
       } else {
         // 如果没有内置logo，则尝试从用户自定义中查找
         const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
-        for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
-          if (currentContainer.usingImage.startsWith(imageName) ||
-            currentContainer.usingImage.includes(`${imageName}:`)) {
-            iconUrl = logoUrl;
-            break;
+        const imageFullName = currentContainer.usingImage;
+
+        if (imageLogos[imageFullName]) {
+          iconUrl = imageLogos[imageFullName];
+        } else {
+          // 降级匹配逻辑
+          const imageName = imageFullName.split(':')[0];
+          for (const [imageId, logoUrl] of Object.entries(imageLogos)) {
+            if (imageId === imageName || imageFullName.startsWith(imageId)) {
+              iconUrl = logoUrl;
+              break;
+            }
           }
         }
       }
     }
 
-    // 根据图标URL显示相应内容
-    if (iconUrl) {
-      return (
-        <img
-          src={iconUrl}
-          alt={currentContainer.name}
-          className="h-12 w-12 rounded-xl object-cover"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            const parent = e.target.parentElement;
-            if (parent) {
-              parent.innerHTML = `
-                <div class="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-white">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                  </svg>
-                </div>
-              `;
-            }
-          }}
+    const IconContent = () => {
+      if (iconUrl) {
+        return (
+          <img
+            src={iconUrl}
+            alt={currentContainer.name}
+            className="h-12 w-12 rounded-xl object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        );
+      }
+      return null;
+    };
+
+    const FallbackIcon = () => (
+      <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white" style={{ display: iconUrl ? 'none' : 'flex' }}>
+        <Package className="h-6 w-6" />
+      </div>
+    );
+
+    return (
+      <div
+        className="relative group cursor-pointer"
+        onClick={() => !isUploadingIcon && fileInputRef.current?.click()}
+        title="点击上传自定义图标"
+      >
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleIconUpload}
+          className="hidden"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
         />
-      );
-    } else {
-      return (
-        <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-          <Package className="h-6 w-6 text-white" />
+
+        <IconContent />
+        <FallbackIcon />
+
+        {/* 悬停覆盖层 */}
+        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          {isUploadingIcon ? (
+            <RefreshCw className="h-5 w-5 text-white animate-spin" />
+          ) : (
+            <Upload className="h-5 w-5 text-white" />
+          )}
         </div>
-      );
-    }
+      </div>
+    );
   };
 
   return (

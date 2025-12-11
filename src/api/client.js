@@ -130,6 +130,14 @@ export const containerAPI = {
 export const imageAPI = {
   getImages: () => apiClient.get('/api/images'),
   deleteImage: (id, force = false) => apiClient.delete(`/api/image/${id}?force=${force}`),
+  uploadIcon: (file, imageName) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('imageName', imageName)
+    return apiClient.post('/api/icons', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
 }
 
 // 进度查询API
