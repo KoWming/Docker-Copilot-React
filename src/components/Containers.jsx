@@ -116,7 +116,6 @@ export function Containers() {
     },
     // 初始数据尝试从localStorage获取，避免闪烁
     initialData: () => JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}'),
-    staleTime: 5 * 60 * 1000, // 5分钟内不标记为过期
   })
 
   const handleContainerAction = async (containerId, action) => {
