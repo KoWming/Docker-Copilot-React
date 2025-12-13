@@ -401,14 +401,14 @@ export function Images() {
                       href={`https://hub.docker.com/r/${image.name}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-auto flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors active:scale-95 bg-transparent whitespace-nowrap"
+                      className="flex-auto flex items-center justify-center gap-1 px-1 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors active:scale-95 bg-transparent whitespace-nowrap"
                     >
                       <Link className="h-3.5 w-3.5" />
                       <span>查看</span>
                     </a>
                     <button
                       onClick={() => setDeleteModal({ isOpen: true, image, force: false })}
-                      className="flex-auto flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95 whitespace-nowrap"
+                      className="flex-auto flex items-center justify-center gap-1 px-1 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95 whitespace-nowrap"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>删除</span>
@@ -416,7 +416,7 @@ export function Images() {
                     {image.inUsed && (
                       <button
                         onClick={() => setDeleteModal({ isOpen: true, image, force: true })}
-                        className="flex-auto flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors active:scale-95 whitespace-nowrap"
+                        className="flex-auto flex items-center justify-center gap-1 px-1 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors active:scale-95 whitespace-nowrap"
                         title="强制删除正在使用的镜像"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

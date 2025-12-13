@@ -59,10 +59,6 @@ function AppContent() {
           const icons = response.data.data
           // 简单的全量更新，以后如果支持前端删除，可能需要合并逻辑
           localStorage.setItem('docker_copilot_image_logos', JSON.stringify(icons))
-          // 触发 storage 事件不太靠谱用于本页更新，但组件可能监听了
-          // 只有 Containers.jsx 监听了吗？ 
-          // Containers.jsx读取localStorage是在渲染时。
-          // 我们可能需要触发一个重新渲染或者 notify
         }
       } catch (error) {
         console.error('Failed to sync icons:', error)

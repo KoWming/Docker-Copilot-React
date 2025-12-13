@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Search, Copy, Eye, Star, Check, X } from 'lucide-react'
 import { cn } from '../utils/cn.js'
 import { builtInImageLogos, getSupportedImageNames } from '../config/imageLogos.js'
+import { useQuery } from '@tanstack/react-query'
+import { imageAPI } from '../api/client.js'
 
 export function Icons() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -9,6 +11,20 @@ export function Icons() {
   const [copiedIcon, setCopiedIcon] = useState(null)
   const [selectedIcon, setSelectedIcon] = useState(null)
   const [favorites, setFavorites] = useState([])
+
+  // 获取自定义图标
+  const { data: customIcons = {} } = useQuery({
+    queryKey: ['customIcons'],
+    queryFn: async () => {
+      const response = await imageAPI.getIcons()
+      if (response.data.code === 200 || response.data.code === 0) {
+        return response.data.data || {}
+      }
+      return {}
+    },
+    // 每次进入页面都刷新，保证是最新的
+    refetchOnMount: true,
+  })
 
   // 从localStorage加载收藏
   useEffect(() => {
@@ -47,41 +63,27 @@ export function Icons() {
     }
   }
 
-  // 获取所有分类
-  const getCategories = () => {
-    const categories = new Set(['all'])
-    Object.keys(builtInImageLogos).forEach(key => {
-      const url = builtInImageLogos[key]
-      if (url.includes('/docker/')) categories.add('docker')
-      else if (url.includes('/nas/')) categories.add('nas')
-      else if (url.includes('/pt/')) categories.add('pt')
-      else if (url.includes('/cloud/')) categories.add('cloud')
-      else if (url.includes('/website/')) categories.add('website')
-    })
-    return Array.from(categories)
-  }
-
-  // 过滤图标
-  const getFilteredIcons = () => {
-    let icons = Object.entries(builtInImageLogos)
+  // 通用图标过滤函数
+  const filterIconsList = (sourceIcons) => {
+    let icons = Object.entries(sourceIcons || {})
 
     // 按分类过滤
     if (selectedCategory !== 'all') {
       icons = icons.filter(([name, url]) => {
+        const isCustom = sourceIcons === customIcons;
+
         switch (selectedCategory) {
-          case 'docker':
-            return url.includes('/docker/')
-          case 'nas':
-            return url.includes('/nas/')
-          case 'pt':
-            return url.includes('/pt/')
-          case 'cloud':
-            return url.includes('/cloud/')
-          case 'website':
-            return url.includes('/website/')
           case 'favorites':
             return favorites.includes(name)
           default:
+            // 只有内置图标才支持基于URL的分类
+            if (isCustom) return false;
+
+            if (selectedCategory === 'docker') return url.includes('/docker/')
+            if (selectedCategory === 'nas') return url.includes('/nas/')
+            if (selectedCategory === 'pt') return url.includes('/pt/')
+            if (selectedCategory === 'cloud') return url.includes('/cloud/')
+            if (selectedCategory === 'website') return url.includes('/website/')
             return true
         }
       })
@@ -97,8 +99,11 @@ export function Icons() {
     return icons
   }
 
-  const filteredIcons = getFilteredIcons()
-  const categories = getCategories()
+  const filteredBuiltInIcons = filterIconsList(builtInImageLogos)
+  const filteredCustomIcons = (selectedCategory === 'all' || selectedCategory === 'favorites')
+    ? filterIconsList(customIcons)
+    : [] // 如果选了特定分类（如NAS），暂不显示自定义图标，因为没法分类
+  const categories = ['all', 'docker', 'nas', 'pt', 'cloud', 'website']
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -143,7 +148,7 @@ export function Icons() {
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              共 {filteredIcons.length} 个
+              共 {filteredBuiltInIcons.length + filteredCustomIcons.length} 个
             </span>
             {favorites.length > 0 && (
               <button
@@ -164,80 +169,174 @@ export function Icons() {
       </div>
 
       {/* 图标网格 */}
-      <div className="px-4 sm:px-6 py-4">
-        {filteredIcons.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filteredIcons.map(([name, url]) => (
-              <div
-                key={name}
-                className="group cursor-pointer"
-                onClick={() => setSelectedIcon({ name, url })}
-              >
-                <div className="card p-4 rounded-2xl hover:shadow-lg transition-all h-full flex flex-col items-center justify-center">
-                  <div className="relative w-full mb-3">
-                    <img
-                      src={url}
-                      alt={name}
-                      className="w-12 h-12 mx-auto object-contain rounded-lg"
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iOCIgZmlsbD0iI0YzRjRGNiIvPgo8cGF0aCBkPSJNMzIgMTZMNDEgMzBIMzNWMzhIMzFWMzBIMjNMMzIgMTZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo='
-                      }}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(name)
-                      }}
-                      className="absolute -top-1 -right-1 p-1.5 rounded-full bg-white dark:bg-gray-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Star
-                        className={cn(
-                          "h-4 w-4",
-                          favorites.includes(name)
-                            ? "text-yellow-500 fill-current"
-                            : "text-gray-300 hover:text-yellow-500"
-                        )}
+      <div className="px-4 sm:px-6 py-4 space-y-8">
+
+        {/* 本地图标库部分 */}
+        {filteredCustomIcons.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 px-1 flex items-center gap-2">
+              <span className="w-1 h-5 bg-primary-500 rounded-full"></span>
+              本地图标库
+              <span className="text-sm font-normal text-gray-500 ml-2">({filteredCustomIcons.length})</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredCustomIcons.map(([name, url]) => (
+                <div
+                  key={name}
+                  className="group cursor-pointer"
+                  onClick={() => setSelectedIcon({ name, url })}
+                >
+                  <div className="card p-4 rounded-2xl hover:shadow-lg transition-all h-full flex flex-col items-center justify-center bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+                    <div className="relative w-full mb-3">
+                      <img
+                        src={url}
+                        alt={name}
+                        className="w-12 h-12 mx-auto object-contain rounded-lg"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iOCIgZmlsbD0iI0YzRjRGNiIvPgo8cGF0aCBkPSJNMzIgMTZMNDEgMzBIMzFWMzVIMzFWMzBIMjNMMzIgMTZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo='
+                        }}
                       />
-                    </button>
-                  </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(name)
+                        }}
+                        className="absolute -top-1 -right-1 p-1.5 rounded-full bg-white dark:bg-gray-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Star
+                          className={cn(
+                            "h-4 w-4",
+                            favorites.includes(name)
+                              ? "text-yellow-500 fill-current"
+                              : "text-gray-300 hover:text-yellow-500"
+                          )}
+                        />
+                      </button>
+                    </div>
 
-                  <div className="text-center w-full">
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                      {name}
-                    </p>
-                  </div>
+                    <div className="text-center w-full">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate" title={name}>
+                        {name}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 w-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        copyToClipboard(url, name)
-                      }}
-                      className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
-                      title="复制链接"
-                    >
-                      {copiedIcon === name ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        window.open(url, '_blank')
-                      }}
-                      className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
-                      title="查看原图"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyToClipboard(url, name)
+                        }}
+                        className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                        title="复制链接"
+                      >
+                        {copiedIcon === name ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open(url, '_blank')
+                        }}
+                        className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                        title="查看原图"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        ) : (
+        )}
+
+        {/* 内置图标库部分 */}
+        {filteredBuiltInIcons.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 px-1 flex items-center gap-2">
+              <span className="w-1 h-5 bg-gray-500 rounded-full"></span>
+              内置图标库
+              <span className="text-sm font-normal text-gray-500 ml-2">({filteredBuiltInIcons.length})</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {filteredBuiltInIcons.map(([name, url]) => (
+                <div
+                  key={name}
+                  className="group cursor-pointer"
+                  onClick={() => setSelectedIcon({ name, url })}
+                >
+                  <div className="card p-4 rounded-2xl hover:shadow-lg transition-all h-full flex flex-col items-center justify-center">
+                    <div className="relative w-full mb-3">
+                      <img
+                        src={url}
+                        alt={name}
+                        className="w-12 h-12 mx-auto object-contain rounded-lg"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iOCIgZmlsbD0iI0YzRjRGNiIvPgo8cGF0aCBkPSJNMzIgMTZMNDEgMzBIMzNWMzhIMzFWMzBIMjNMMzIgMTZaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo='
+                        }}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(name)
+                        }}
+                        className="absolute -top-1 -right-1 p-1.5 rounded-full bg-white dark:bg-gray-800 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Star
+                          className={cn(
+                            "h-4 w-4",
+                            favorites.includes(name)
+                              ? "text-yellow-500 fill-current"
+                              : "text-gray-300 hover:text-yellow-500"
+                          )}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="text-center w-full">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate" title={name}>
+                        {name}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyToClipboard(url, name)
+                        }}
+                        className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                        title="复制链接"
+                      >
+                        {copiedIcon === name ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open(url, '_blank')
+                        }}
+                        className="p-1 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                        title="查看原图"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 无结果提示 */}
+        {filteredCustomIcons.length === 0 && filteredBuiltInIcons.length === 0 && (
           <div className="text-center py-12">
             <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-8 w-8 text-gray-400" />
