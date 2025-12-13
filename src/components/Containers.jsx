@@ -104,6 +104,21 @@ export function Containers() {
     refetchInterval: 10000, // 每10秒自动刷新一次
   })
 
+  // 获取自定义图标配置
+  const { data: customIcons = {} } = useQuery({
+    queryKey: ['customIcons'],
+    queryFn: async () => {
+      const response = await imageAPI.getIcons()
+      if (response.data.code === 200 || response.data.code === 0) {
+        return response.data.data || {}
+      }
+      return {}
+    },
+    // 初始数据尝试从localStorage获取，避免闪烁
+    initialData: () => JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}'),
+    staleTime: 5 * 60 * 1000, // 5分钟内不标记为过期
+  })
+
   const handleContainerAction = async (containerId, action) => {
     try {
       // 设置操作状态为加载中
@@ -947,7 +962,11 @@ export function Containers() {
                               if (builtInLogo) {
                                 iconUrl = builtInLogo;
                               } else {
-                                const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
+                                // 如果没有内置logo，则尝试从用户自定义中查找
+                                // const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
+                                // 使用 React Query 获取的数据
+                                const imageLogos = customIcons;
+
                                 for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
                                   if (container.usingImage.startsWith(imageName) ||
                                     container.usingImage.includes(`${imageName}:`)) {
@@ -1134,6 +1153,19 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
   const fileInputRef = React.useRef(null)
   const [isUploadingIcon, setIsUploadingIcon] = useState(false)
 
+  // 获取自定义图标配置
+  const { data: customIcons = {} } = useQuery({
+    queryKey: ['customIcons'],
+    queryFn: async () => {
+      const response = await imageAPI.getIcons()
+      if (response.data.code === 200 || response.data.code === 0) {
+        return response.data.data || {}
+      }
+      return {}
+    },
+    initialData: () => JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}'),
+  })
+
   // 当容器切换时，更新表单字段的值
   React.useEffect(() => {
     setName(container.name)
@@ -1234,8 +1266,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
           // 触发全局事件以便其他组件（如列表）更新
           window.dispatchEvent(new Event('storage'))
 
-          // 无效化查询以刷新列表
+          // 无效化查询以刷新列表和图标
           await queryClient.invalidateQueries(['containers'])
+          await queryClient.invalidateQueries(['customIcons'])
 
           console.log('✅ 图标上传成功并已应用')
         }
@@ -1396,7 +1429,8 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         iconUrl = builtInLogo;
       } else {
         // 如果没有内置logo，则尝试从用户自定义中查找
-        const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
+        // const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
+        const imageLogos = customIcons;
         const imageFullName = currentContainer.usingImage;
 
         if (imageLogos[imageFullName]) {
