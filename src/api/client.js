@@ -131,10 +131,13 @@ export const imageAPI = {
   getImages: () => apiClient.get('/api/images'),
   getIcons: () => apiClient.get('/api/icons'),
   deleteImage: (id, force = false) => apiClient.delete(`/api/image/${id}?force=${force}`),
-  uploadIcon: (file, imageName) => {
+  uploadIcon: (file, imageName, containerName) => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('imageName', imageName)
+    if (containerName) {
+      formData.append('containerName', containerName)
+    }
     return apiClient.post('/api/icons', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })

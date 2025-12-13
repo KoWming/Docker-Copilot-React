@@ -1269,7 +1269,7 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
       // 如果有自定义镜像名配置(容器更新时可能改变)，优先使用新的
       const targetImageName = imageNameAndTag || currentContainer.usingImage
 
-      const response = await imageAPI.uploadIcon(file, targetImageName)
+      const response = await imageAPI.uploadIcon(file, targetImageName, currentContainer.name)
 
       if (response.data.code === 200 || response.data.code === 0) {
         // 上传成功，更新 localStorage
