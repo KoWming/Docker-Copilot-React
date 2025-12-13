@@ -108,14 +108,40 @@ export function Containers() {
   const { data: customIcons = {} } = useQuery({
     queryKey: ['customIcons'],
     queryFn: async () => {
-      const response = await imageAPI.getIcons()
-      if (response.data.code === 200 || response.data.code === 0) {
-        return response.data.data || {}
+      console.log('[Debug] 开始从服务器获取图标配置...')
+      try {
+        const response = await imageAPI.getIcons()
+        console.log('[Debug] 图标API响应:', response.data)
+        if (response.data.code === 200 || response.data.code === 0) {
+          const icons = response.data.data || {}
+          console.log('[Debug] 获取到的图标数据:', icons)
+          // update localStorage
+          localStorage.setItem('docker_copilot_image_logos', JSON.stringify(icons))
+          return icons
+        }
+      } catch (err) {
+        console.error('[Debug] 获取图标失败:', err)
       }
       return {}
     },
     // 初始数据尝试从localStorage获取，避免闪烁
-    initialData: () => JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}'),
+    initialData: () => {
+      const saved = localStorage.getItem('docker_copilot_image_logos')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          // 只有当有实际数据时才作为初始数据
+          if (Object.keys(parsed).length > 0) {
+            return parsed
+          }
+        } catch (e) {
+          console.error('解析本地图标配置失败:', e)
+        }
+      }
+      return undefined
+    },
+    // 即使有初始数据，也立即在后台刷新
+    refetchOnMount: true,
   })
 
   const handleContainerAction = async (containerId, action) => {
