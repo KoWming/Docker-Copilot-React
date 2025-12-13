@@ -129,6 +129,7 @@ export const containerAPI = {
 // 镜像相关API
 export const imageAPI = {
   getImages: () => apiClient.get('/api/images'),
+  getIcons: () => apiClient.get('/api/icons'),
   deleteImage: (id, force = false) => apiClient.delete(`/api/image/${id}?force=${force}`),
   uploadIcon: (file, imageName) => {
     const formData = new FormData()
