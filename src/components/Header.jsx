@@ -99,40 +99,48 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
     <>
       {/* 顶部导航栏 - 仅在手机模式（sm）显示 */}
       {windowWidth < 768 && (
-        <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 sm:px-4 z-40 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: '0.875rem', height: 'calc(3.5rem + env(safe-area-inset-top))' }}>
-          {/* 左侧：Logo 和项目信息 */}
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity active:scale-95 rounded-lg group"
-            title="打开菜单"
-          >
-            <img
-              src={logoImg}
-              alt="菜单"
-              className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg object-cover border-0"
-            />
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">Docker Copilot</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{backendVersion || 'v1.0'}</span>
-            </div>
-          </button>
-
-          {/* 右侧：主题切换和退出登录 */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle collapsed={false} />
+        <div 
+          className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-40 shadow-sm"
+          style={{ 
+            paddingTop: 'env(safe-area-inset-top, 0px)'
+          }}
+        >
+          {/* 内容区域：设置固定高度并使用 flex 垂直居中 */}
+          <div className="flex items-center justify-between px-3 sm:px-4 h-[3.5rem]">
+            {/* 左侧：Logo 和项目信息 */}
             <button
-              onClick={onLogout}
-              className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95"
-              title="退出登录"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity active:scale-95 rounded-lg group"
+              title="打开菜单"
             >
-              <LogOut className="h-5 w-5" />
+              <img
+                src={logoImg}
+                alt="菜单"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-cover border-0 shadow-sm"
+              />
+              <div className="flex items-center gap-1.5 ml-0.5">
+                <span className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">Docker Copilot</span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md font-medium">{backendVersion || 'v1.0'}</span>
+              </div>
             </button>
+
+            {/* 右侧：主题切换和退出登录 */}
+            <div className="flex items-center gap-1">
+              <ThemeToggle collapsed={false} />
+              <button
+                onClick={onLogout}
+                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95 flex items-center justify-center"
+                title="退出登录"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* 添加顶部导航栏的占位符 - 仅在手机模式显示 */}
-      {windowWidth < 768 && <div style={{ height: 'calc(3.5rem + env(safe-area-inset-top))' }} />}
+      {windowWidth < 768 && <div style={{ height: 'calc(3.5rem + env(safe-area-inset-top, 0px))' }} />}
 
       {/* 侧边栏遮罩 - 仅在手机菜单打开时显示 */}
       {windowWidth < 768 && isMobileMenuOpen && (
@@ -424,17 +432,31 @@ export function MobileBottomNav({ activeTab, onTabChange, windowWidth = 1024 }) 
     },
   ]
 
+  // 计算当前激活项的索引
+  const activeIndex = navItems.findIndex(item => item.id === activeTab);
+  const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+
   return (
     <>
       {windowWidth < 768 && (
         <nav 
-          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full z-40 shadow-lg transition-all duration-300" 
+          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-sm bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-full z-40 shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300" 
           style={{ 
-            bottom: 'env(safe-area-inset-bottom, 0.5rem)',
-            paddingBottom: '0.5rem'
+            bottom: 'max(env(safe-area-inset-bottom), 0.75rem)'
           }}
         >
-          <div className="flex items-center justify-around px-3 py-3.5 gap-2">
+          {/* 精致的内部容器，减少了整体高度和内边距 */}
+          <div className="flex items-center relative p-1">
+            {/* 果冻滑动指示器 - 绝对定位 */}
+            <div 
+              className="absolute top-1 bottom-1 bg-primary-100 dark:bg-primary-900/50 rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] shadow-sm dark:shadow-none pointer-events-none"
+              style={{
+                width: `calc((100% - 8px) / ${navItems.length})`,
+                left: `calc(4px + ${safeActiveIndex} * ((100% - 8px) / ${navItems.length}))`,
+                transform: 'translateZ(0)' // 硬件加速
+              }}
+            />
+            
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = activeTab === item.id
@@ -443,15 +465,17 @@ export function MobileBottomNav({ activeTab, onTabChange, windowWidth = 1024 }) 
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-full transition-all duration-200 active:scale-95 flex-1",
+                    "relative z-10 flex flex-col items-center justify-center py-1.5 rounded-full transition-colors duration-200 active:scale-95 flex-1 gap-0.5",
                     isActive
-                      ? "text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/40"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                      ? "text-primary-600 dark:text-primary-400"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                   )}
                   title={item.label}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <Icon className={cn("transition-transform duration-300", isActive ? "h-4 w-4 scale-110" : "h-4 w-4")} />
+                  <span className={cn("text-[9px] font-medium origin-bottom transition-all duration-300 leading-none mt-0.5", isActive ? "scale-100 opacity-100" : "scale-90 opacity-80")}>
+                    {item.label}
+                  </span>
                 </button>
               )
             })}

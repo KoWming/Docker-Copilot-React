@@ -639,7 +639,7 @@ export function Containers() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-4 sm:py-4">
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% 0; }
@@ -701,171 +701,184 @@ export function Containers() {
       )}
 
       {/* 页面标题和操作 */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0 pt-4 sm:pt-0">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">容器管理</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            管理您的Docker容器，包括启动、停止、重启等操作
-          </p>
+      <div className="mb-4">
+        {/* 第一行：标题与主要动作 */}
+        <div className="flex justify-between items-start pt-1 sm:pt-0">
+          <div className="flex-1 mr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">容器管理</h2>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 leading-snug">
+              管理您的Docker容器，包括启动、停止、重启等操作
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 mt-1 sm:mt-0">
+            {!isBatchMode ? (
+              <>
+                <button
+                  className="btn-secondary text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                  onClick={() => setIsBatchMode(true)}
+                >
+                  批量操作
+                </button>
+
+                <button
+                  className="btn-primary text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                  onClick={() => refetch()}
+                >
+                  <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  刷新
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn-danger flex items-center justify-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                onClick={() => {
+                  setSelectedContainers([])
+                  setIsBatchMode(false)
+                }}
+              >
+                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 sm:mr-1" />
+                <span>取消</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* 批量操作按钮区域 */}
-        {!isBatchMode ? (
-          <div className="flex items-center space-x-3">
+        {/* 第二行：批量操作工具栏（仅在批量模式下显示） */}
+        {isBatchMode && (
+          <div className="flex justify-between w-full gap-1.5 sm:gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/50">
             <button
-              className="btn-secondary"
-              onClick={() => setIsBatchMode(true)}
-            >
-              批量操作
-            </button>
-
-            <button
-              className="btn-primary"
-              onClick={() => refetch()}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              刷新
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-            <button
-              className="btn-secondary px-3 sm:px-4 py-2"
+              className="btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2"
               onClick={toggleSelectAll}
               title={selectedContainers.length === containers.length ? '取消全选' : '全选'}
             >
-              <span className="hidden sm:inline">
-                {selectedContainers.length === containers.length ? '取消全选' : '全选'}
-              </span>
-              <span className="sm:hidden text-sm font-semibold">
-                {selectedContainers.length}/{containers.length}
+              <span className="font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+                {selectedContainers.length}/{containers.length} 全选
               </span>
             </button>
             <button
-              className={`btn-primary flex items-center justify-center px-3 sm:px-4 py-2 gap-1 sm:gap-2 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('start')}
               title="启动"
             >
-              <Play className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">启动</span>
+              <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">启动</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center px-3 sm:px-4 py-2 gap-1 sm:gap-2 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('stop')}
               title="停止"
             >
-              <Square className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">停止</span>
+              <Square className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">停止</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center px-3 sm:px-4 py-2 gap-1 sm:gap-2 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('restart')}
               title="重启"
             >
-              <RotateCcw className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">重启</span>
+              <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">重启</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center px-3 sm:px-4 py-2 gap-1 sm:gap-2 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('update')}
               title="更新"
             >
-              <Upload className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">更新</span>
-            </button>
-            <button
-              className="btn-danger px-3 sm:px-4 py-2"
-              onClick={() => {
-                setSelectedContainers([])
-                setIsBatchMode(false)
-              }}
-            >
-              <span className="hidden sm:inline">取消</span>
-              <span className="sm:hidden">✕</span>
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">更新</span>
             </button>
           </div>
         )}
       </div>
 
       {/* 统计信息 */}
-      <div className="px-2 sm:px-6 py-4">
-        <div className="grid grid-cols-4 gap-0 rounded-3xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="mb-4">
+        <div className="grid grid-cols-4 gap-0 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-gray-200/60 dark:border-gray-700/60 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm divide-x divide-gray-100 dark:divide-gray-800/50">
           {/* 总容器数 */}
           <button
             onClick={() => setFilterStatus(null)}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === null ? "bg-primary-50 dark:bg-primary-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "flex flex-col items-center justify-center py-2 sm:py-3 px-1 transition-all duration-300 relative group overflow-hidden",
+              filterStatus === null
+                ? "bg-blue-50/80 dark:bg-blue-900/20"
+                : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400 transition-transform duration-300 group-hover:scale-110">
-                {containers.length}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">总容器</div>
+            {filterStatus === null && (
+              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono tracking-tight group-hover:scale-110 transition-transform duration-300 relative z-10">
+              {containers.length}
             </div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-blue-600/70 dark:group-hover:text-blue-400/70 transition-colors relative z-10">总容器</div>
           </button>
 
           {/* 运行中 */}
           <button
             onClick={() => setFilterStatus('running')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === 'running' ? "bg-green-50 dark:bg-green-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "flex flex-col items-center justify-center py-2 sm:py-3 px-1 transition-all duration-300 relative group overflow-hidden",
+              filterStatus === 'running'
+                ? "bg-green-50/80 dark:bg-green-900/20"
+                : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400 transition-transform duration-300 group-hover:scale-110">
-                {containers.filter(c => c.status === 'running').length}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">运行中</div>
+            {filterStatus === 'running' && (
+              <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 font-mono tracking-tight group-hover:scale-110 transition-transform duration-300 relative z-10">
+              {containers.filter(c => c.status === 'running').length}
             </div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-green-600/70 dark:group-hover:text-green-400/70 transition-colors relative z-10">运行中</div>
           </button>
 
           {/* 已停止 */}
           <button
             onClick={() => setFilterStatus('stopped')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === 'stopped' ? "bg-red-50 dark:bg-red-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "flex flex-col items-center justify-center py-2 sm:py-3 px-1 transition-all duration-300 relative group overflow-hidden",
+              filterStatus === 'stopped'
+                ? "bg-red-50/80 dark:bg-red-900/20"
+                : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400 transition-transform duration-300 group-hover:scale-110">
-                {containers.filter(c => c.status && c.status.toLowerCase() !== 'running').length}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">已停止</div>
+            {filterStatus === 'stopped' && (
+              <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 font-mono tracking-tight group-hover:scale-110 transition-transform duration-300 relative z-10">
+              {containers.filter(c => c.status && c.status.toLowerCase() !== 'running').length}
             </div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-red-600/70 dark:group-hover:text-red-400/70 transition-colors relative z-10">已停止</div>
           </button>
 
           {/* 有更新 */}
           <button
             onClick={() => setFilterStatus('update')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
-              filterStatus === 'update' ? "bg-yellow-50 dark:bg-yellow-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "flex flex-col items-center justify-center py-2 sm:py-3 px-1 transition-all duration-300 relative group overflow-hidden",
+              filterStatus === 'update'
+                ? "bg-yellow-50/80 dark:bg-yellow-900/20"
+                : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400 transition-transform duration-300 group-hover:scale-110">
-                {containers.filter(c => c.haveUpdate).length}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">有更新</div>
+            {filterStatus === 'update' && (
+              <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 font-mono tracking-tight group-hover:scale-110 transition-transform duration-300 relative z-10">
+              {containers.filter(c => c.haveUpdate).length}
             </div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-yellow-600/70 dark:group-hover:text-yellow-400/70 transition-colors relative z-10">有更新</div>
           </button>
         </div>
       </div>
 
       {/* 容器列表 */}
-      <div className="px-2 sm:px-6 py-4">
+      <div className="mt-4 sm:mt-6 mb-24">
         {(filterStatus || selectedContainers.length > 0) && (
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex items-center justify-between">
@@ -1051,22 +1064,19 @@ export function Containers() {
                           })()}
                         </div>
 
-                        {/* 状态指示器（放在图标和信息之间） */}
-                        <div className="flex-shrink-0 flex items-center">
-                          <div className={cn(
-                            "w-1 h-8 rounded-full",
-                            getStatusIndicatorColor(container.status)
-                          )} />
-                        </div>
-
                         {/* 容器信息 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center">
+                              <div className="flex items-center gap-2">
                                 <h3 className="font-semibold text-gray-900 dark:text-white truncate text-base group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                                   {container.name}
                                 </h3>
+                                {/* 状态指示器 */}
+                                <div className={cn(
+                                  "flex-shrink-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-sm mt-0.5",
+                                  getStatusIndicatorColor(container.status)
+                                )} />
                               </div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                                 {container.usingImage}
@@ -1549,28 +1559,35 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden transition-all">
         {/* 弹窗头部 */}
-        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex justify-between items-center">
+        <div className="border-b border-gray-100 dark:border-gray-700/50 px-6 py-5">
+          <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">容器详情</h3>
-              <div className="flex items-center mt-1">
-                {getContainerIcon()}
-                {/* 状态指示器竖线 */}
-                <div className="flex flex-col items-center justify-center h-full ml-3">
-                  <div className={cn(
-                    "w-1 h-8 rounded-full",
-                    getStatusIndicatorColor(currentContainer.status)
-                  )}></div>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">容器详情</h3>
+                <span className="text-[10px] sm:text-xs text-blue-500/80 dark:text-blue-400/80 font-normal">
+                  💡 点击容器图标可上传自定义图标
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  {getContainerIcon()}
                 </div>
-                <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {currentContainer.name}
-                  </span>
-                  <div className="flex items-center mt-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate max-w-[150px] sm:max-w-[200px]">
+                      {currentContainer.name}
+                    </span>
+                    {/* 状态指示器圆点 */}
+                    <div className={cn(
+                      "flex-shrink-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-sm",
+                      getStatusIndicatorColor(currentContainer.status)
+                    )} title={`状态: ${currentContainer.status}`} />
+                  </div>
+                  <div className="flex flex-col mt-0.5 sm:mt-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                       {currentContainer.id.substring(0, 12)}
                     </span>
                   </div>

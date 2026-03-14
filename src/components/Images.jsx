@@ -24,8 +24,6 @@ function SafeImage({ src, alt, className, fallback }) {
 }
 
 export function Images() {
-  const [images, setImages] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, image: null })
@@ -64,36 +62,29 @@ export function Images() {
     }
   })
 
-  const fetchImages = async () => {
-    try {
-      setIsLoading(true)
+  // 使用 React Query 获取镜像列表，避免页面切换闪烁
+  const { data: images = [], isLoading, refetch: fetchImages } = useQuery({
+    queryKey: ['images'],
+    queryFn: async () => {
       setError(null)
-
-      const response = await imageAPI.getImages()
-
-      if (response.data && (response.data.code === 0 || response.data.code === 200)) {
-        setImages(response.data.data || [])
-      } else {
-        const errorMsg = response.data?.msg || '获取镜像列表失败'
-        setError(errorMsg)
-        setImages([])
+      try {
+        const response = await imageAPI.getImages()
+        if (response.data && (response.data.code === 0 || response.data.code === 200)) {
+          return response.data.data || []
+        } else {
+          setError(response.data?.msg || '获取镜像列表失败')
+          return []
+        }
+      } catch (err) {
+        setError(err.response?.data?.msg || err.message || '网络错误，请检查后端服务')
+        return []
       }
-    } catch (error) {
-      const errorMsg = error.response?.data?.msg || error.message || '网络错误，请检查后端服务'
-      setError(errorMsg)
-      setImages([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchImages()
-  }, [])
+    },
+    refetchInterval: 10000,
+  })
 
   const handleDeleteImage = async (imageId, force = false) => {
     try {
-      setIsLoading(true)
       setDeleteModal({ isOpen: false, image: null })
 
       await imageAPI.deleteImage(imageId, force)
@@ -101,16 +92,14 @@ export function Images() {
       setSuccessModal({ isOpen: true, message: '镜像删除成功' })
       fetchImages()
       setTimeout(() => setSuccessModal({ isOpen: false, message: '' }), 3000)
-    } catch (error) {
-      const errorMsg = error.response?.data?.msg || error.message || '删除镜像失败'
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || err.message || '删除镜像失败'
       setError(errorMsg)
-      setIsLoading(false)
     }
   }
 
   const handlePrune = async (type) => {
     try {
-      setIsLoading(true)
       setError(null)
 
       let imagesToDelete = []
@@ -122,7 +111,6 @@ export function Images() {
 
       if (imagesToDelete.length === 0) {
         setError('没有找到需要清理的镜像')
-        setIsLoading(false)
         return
       }
 
@@ -140,10 +128,9 @@ export function Images() {
       setSuccessModal({ isOpen: true, message })
       fetchImages()
       setTimeout(() => setSuccessModal({ isOpen: false, message: '' }), 3000)
-    } catch (error) {
-      const errorMsg = error.response?.data?.msg || error.message || '清理镜像失败'
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || err.message || '清理镜像失败'
       setError(errorMsg)
-      setIsLoading(false)
     }
   }
 
@@ -177,24 +164,24 @@ export function Images() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-4 sm:py-4">
       {/* 页面头部 */}
-      <div className="px-2 sm:px-6 py-4 pt-4 sm:pt-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">镜像管理</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">查看和管理Docker镜像</p>
+      <div className="mb-4">
+        <div className="flex justify-between items-start pt-1 sm:pt-0">
+          <div className="flex-1 mr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">镜像管理</h2>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 leading-snug">查看和管理Docker镜像</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap justify-end items-center gap-1.5 sm:gap-3 shrink-0 mt-1 sm:mt-0">
             <button
               onClick={() => {
                 const imagesToDelete = images.filter(img => img.tag === 'None' || img.tag === '<none>')
                 setPruneModal({ isOpen: true, type: 'dangling', images: imagesToDelete })
               }}
               disabled={isLoading || images.filter(img => img.tag === 'None' || img.tag === '<none>').length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors disabled:opacity-50 text-sm font-medium"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <BrushCleaning className="h-4 w-4" />
+              <BrushCleaning className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <span>无Tag</span>
             </button>
             <button
@@ -203,17 +190,17 @@ export function Images() {
                 setPruneModal({ isOpen: true, type: 'unused', images: imagesToDelete })
               }}
               disabled={isLoading || images.filter(img => !img.inUsed).length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors disabled:opacity-50 text-sm font-medium"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <BrushCleaning className="h-4 w-4" />
+              <BrushCleaning className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <span>未使用</span>
             </button>
             <button
               onClick={fetchImages}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-sm font-medium"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
               <span>刷新</span>
             </button>
           </div>
@@ -249,8 +236,8 @@ export function Images() {
 
       {/* 成功弹窗 */}
       {successModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100 hover:scale-105">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100 hover:scale-105">
             {/* 顶部装饰条 */}
             <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600"></div>
 
@@ -292,22 +279,22 @@ export function Images() {
       )}
 
       {/* 统计信息 */}
-      <div className="px-2 sm:px-6 py-4">
-        <div className="grid grid-cols-4 gap-0 rounded-3xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="mb-4">
+        <div className="grid grid-cols-4 gap-0 rounded-2xl sm:rounded-3xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 shadow-sm divide-x divide-gray-100 dark:divide-gray-800/60 overflow-hidden text-center">
           {/* 总镜像数 */}
           <button
             onClick={() => setFilterStatus(null)}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === null ? "bg-primary-50 dark:bg-primary-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              filterStatus === null ? "bg-primary-50/80 dark:bg-primary-900/20" : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {images.length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">总镜像</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-primary-600/70 transition-colors">总镜像</div>
             </div>
           </button>
 
@@ -315,16 +302,16 @@ export function Images() {
           <button
             onClick={() => setFilterStatus('used')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === 'used' ? "bg-green-50 dark:bg-green-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              filterStatus === 'used' ? "bg-green-50/80 dark:bg-green-900/20" : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {images.filter(img => img.inUsed).length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">使用中</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-green-600/70 transition-colors">使用中</div>
             </div>
           </button>
 
@@ -332,16 +319,16 @@ export function Images() {
           <button
             onClick={() => setFilterStatus('unused')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              filterStatus === 'unused' ? "bg-yellow-50 dark:bg-yellow-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              filterStatus === 'unused' ? "bg-purple-50/80 dark:bg-purple-900/20" : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {images.filter(img => !img.inUsed).length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">未使用</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-purple-600/70 transition-colors">未使用</div>
             </div>
           </button>
 
@@ -349,16 +336,16 @@ export function Images() {
           <button
             onClick={() => setFilterStatus('dangling')}
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
-              filterStatus === 'dangling' ? "bg-orange-50 dark:bg-orange-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              filterStatus === 'dangling' ? "bg-orange-50/80 dark:bg-orange-900/20" : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {images.filter(img => img.tag === 'None' || img.tag === '<none>').length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">无Tag</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-orange-600/70 transition-colors">无Tag</div>
             </div>
           </button>
         </div>
@@ -387,7 +374,7 @@ export function Images() {
       )}
 
       {/* 镜像网格 */}
-      <div className="px-2 sm:px-6 py-4">
+      <div className="mt-4 sm:mt-6 mb-24">
         {images.length === 0 ? (
           <div className="card p-12 text-center rounded-2xl">
             <HardDrive className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
@@ -417,20 +404,17 @@ export function Images() {
                       />
                     </div>
                     
-                    {/* 竖线状态指示器 */}
-                    <div className="flex flex-col items-center justify-center h-10">
-                      {image.inUsed && (
-                        <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full flex-shrink-0" />
-                      )}
-                      {!image.inUsed && (
-                        <div className="w-1 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex-shrink-0" />
-                      )}
-                    </div>
-                    
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm">
-                        {image.name}
-                      </h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm">
+                          {image.name}
+                        </h4>
+                        {/* 状态指示器圆点 */}
+                        <div className={cn(
+                          "flex-shrink-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-sm mt-0.5",
+                          image.inUsed ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+                        )} title={image.inUsed ? "使用中" : "未使用"} />
+                      </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center justify-between gap-2">
                         <span className="truncate">{image.tag}</span>
                         <span className={cn("font-semibold flex-shrink-0 whitespace-nowrap", getSizeColor(image.size))}>
@@ -491,8 +475,8 @@ export function Images() {
 
       {/* 批量删除确认弹窗 */}
       {pruneModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-96 flex flex-col overflow-hidden transform transition-all duration-300 scale-100">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-2xl w-full max-h-96 flex flex-col overflow-hidden transform transition-all duration-300 scale-100">
             {/* 顶部装饰条 */}
             <div className="h-1 bg-gradient-to-r from-orange-400 via-red-500 to-orange-600"></div>
 
@@ -573,8 +557,8 @@ export function Images() {
 
       {/* 删除确认弹窗 */}
       {deleteModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100">
             {/* 顶部装饰条 */}
             {/*<div className="h-1 bg-gradient-to-r from-red-400 via-rose-500 to-red-600"></div>*/}
 

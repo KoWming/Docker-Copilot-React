@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   HardDrive,
   Trash2,
@@ -14,8 +15,7 @@ import { containerAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
 
 export function Backups() {
-  const [backups, setBackups] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isOperating, setIsOperating] = useState(false)
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isDeleting, setIsDeleting] = useState({})
   const [error, setError] = useState(null)
@@ -34,29 +34,29 @@ export function Backups() {
   // 成功弹窗状态
   const [successModal, setSuccessModal] = useState({ isOpen: false, message: '' })
 
-  const fetchBackups = async () => {
-    try {
-      setIsLoading(true)
+  // 使用 React Query 获取备份列表，避免页面切换闪烁
+  const { data: backups = [], isLoading: isQueryLoading, refetch: fetchBackups } = useQuery({
+    queryKey: ['backups'],
+    queryFn: async () => {
       setError(null)
-
-      const response = await containerAPI.listBackups()
-      if (response.data && (response.data.code === 0 || response.data.code === 200)) {
-        setBackups(response.data.data || [])
-      } else {
-        setError(response.data?.msg || '获取备份列表失败')
-        setBackups([])
+      try {
+        const response = await containerAPI.listBackups()
+        if (response.data && (response.data.code === 0 || response.data.code === 200)) {
+          return response.data.data || []
+        } else {
+          setError(response.data?.msg || '获取备份列表失败')
+          return []
+        }
+      } catch (err) {
+        setError(err.response?.data?.msg || err.message || '网络错误，请检查后端服务')
+        return []
       }
-    } catch (error) {
-      setError(error.response?.data?.msg || error.message || '网络错误，请检查后端服务')
-      setBackups([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+    refetchInterval: 10000,
+  })
 
-  useEffect(() => {
-    fetchBackups()
-  }, [])
+  // 综合加载状态：首屏加载或正在恢复
+  const isLoading = isQueryLoading || isOperating
 
   const handleBackup = async () => {
     try {
@@ -108,7 +108,7 @@ export function Backups() {
 
   const handleRestore = async (filename) => {
     try {
-      setIsLoading(true)
+      setIsOperating(true)
       setError(null)
       setSuccess(null)
 
@@ -144,7 +144,7 @@ export function Backups() {
 
       setError(errorMsg)
     } finally {
-      setIsLoading(false)
+      setIsOperating(false)
 
       // 3秒后清除成功消息
       setTimeout(() => setSuccessModal({ isOpen: false, message: '' }), 3000)
@@ -193,8 +193,7 @@ export function Backups() {
       if (response.status === 200 || response.status === 204 || response.status === 204) {
         console.log('✨ 删除成功！')
         setSuccessModal({ isOpen: true, message: `备份 ${filename} 删除成功` })
-        // 从列表中移除已删除的备份
-        setBackups(backups.filter(backup => backup !== filename))
+        fetchBackups()
         return
       }
 
@@ -203,7 +202,7 @@ export function Backups() {
         if (response.data.code === 0 || response.data.code === 200 || response.data.code === 204) {
           console.log('✨ 删除成功（从响应体）！')
           setSuccessModal({ isOpen: true, message: `备份 ${filename} 删除成功` })
-          setBackups(backups.filter(backup => backup !== filename))
+          fetchBackups()
           return
         }
         if (response.data.msg) {
@@ -216,7 +215,7 @@ export function Backups() {
       // 如果走到这里，说明删除可能成功但响应格式不标准
       console.log('⚠️ 响应格式不标准，假设删除成功')
       setSuccessModal({ isOpen: true, message: `备份 ${filename} 删除成功` })
-      setBackups(backups.filter(backup => backup !== filename))
+      fetchBackups()
 
     } catch (error) {
       console.error('❌ 删除备份失败:', {
@@ -333,12 +332,12 @@ export function Backups() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-4 sm:py-4">
       {/* 自定义确认弹窗 */}
       {confirmModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transition-all">
+            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {confirmModal.title}
               </h3>
@@ -354,20 +353,20 @@ export function Backups() {
                 {confirmModal.message}
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex justify-end space-x-3">
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 flex justify-end space-x-3">
               <button
                 onClick={confirmModal.onCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={confirmModal.onConfirm}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors",
+                  "px-4 py-2 text-sm font-medium text-white rounded-xl transition-all shadow-md active:scale-95",
                   confirmModal.type === 'danger'
-                    ? "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
-                    : "bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600"
+                    ? "bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
+                    : "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
                 )}
               >
                 确认
@@ -378,36 +377,36 @@ export function Backups() {
       )}
 
       {/* 页面头部 */}
-      <div className="px-2 sm:px-6 py-4 pt-4 sm:pt-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">备份管理</h2>
-            <p className="text-gray-600 dark:text-gray-400">创建、恢复和删除容器备份</p>
+      <div className="mb-4">
+        <div className="flex justify-between items-start pt-1 sm:pt-0">
+          <div className="flex-1 mr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">备份管理</h2>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 leading-snug">创建、恢复和删除容器备份</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap justify-end items-center gap-1.5 sm:gap-3 shrink-0 mt-1 sm:mt-0">
             <button
               onClick={handleBackupToCompose}
               disabled={isBackingUp}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <FileCode className={`h-4 w-4 ${isBackingUp ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">YAML</span>
+              <FileCode className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isBackingUp ? 'animate-spin' : ''}`} />
+              <span>YAML</span>
             </button>
             <button
               onClick={handleBackup}
               disabled={isBackingUp}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <Save className={`h-4 w-4 ${isBackingUp ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">JSON</span>
+              <Save className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isBackingUp ? 'animate-spin' : ''}`} />
+              <span>JSON</span>
             </button>
             <button
               onClick={fetchBackups}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">刷新</span>
+              <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>刷新</span>
             </button>
           </div>
         </div>
@@ -430,8 +429,8 @@ export function Backups() {
 
       {/* 成功弹窗 */}
       {successModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100 hover:scale-105">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100 hover:scale-105">
             {/* 顶部装饰条 */}
             <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600"></div>
 
@@ -473,60 +472,60 @@ export function Backups() {
       )}
 
       {/* 统计信息 */}
-      <div className="px-2 sm:px-6 py-4">
-        <div className="grid grid-cols-3 gap-0 rounded-3xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="mb-4">
+        <div className="grid grid-cols-3 gap-0 rounded-2xl sm:rounded-3xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 shadow-sm divide-x divide-gray-100 dark:divide-gray-800/60 overflow-hidden text-center">
           {/* 总备份数 */}
           <button
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {backups.length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">总备份</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-primary-600/70 transition-colors">总备份</div>
             </div>
           </button>
 
           {/* JSON 备份 */}
           <button
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group border-r border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center",
-              "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {backups.filter(b => b.endsWith('.json')).length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">JSON</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-blue-600/70 transition-colors">JSON</div>
             </div>
           </button>
 
           {/* YAML 备份 */}
           <button
             className={cn(
-              "p-3 sm:p-5 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
-              "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              "p-2 sm:p-3 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center",
+              "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400 transition-transform duration-300 group-hover:scale-110">
+            <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 font-mono tracking-tight transition-transform duration-300 group-hover:scale-110">
                 {backups.filter(b => b.endsWith('.yaml') || b.endsWith('.yml')).length}
               </div>
-              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">YAML</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-purple-600/70 transition-colors">YAML</div>
             </div>
           </button>
         </div>
       </div>
 
       {/* 备份列表 */}
-      <div className="px-2 sm:px-6 py-4">
+      <div className="mt-4 sm:mt-6 mb-24">
         {backups.length === 0 ? (
           <div className="card p-12 text-center rounded-2xl">
             <HardDrive className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
