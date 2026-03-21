@@ -653,9 +653,9 @@ export function Containers() {
 
       {/* 自定义确认弹窗 */}
       {confirmModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden transition-all">
+            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {confirmModal.title}
               </h3>
@@ -664,7 +664,7 @@ export function Containers() {
                   if (confirmModal.onCancel) confirmModal.onCancel();
                   setConfirmModal({ isOpen: false });
                 }}
-                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -674,13 +674,13 @@ export function Containers() {
                 {confirmModal.message}
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex justify-end space-x-3">
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 flex justify-end gap-3 bg-gray-50/50 dark:bg-gray-700/20">
               <button
                 onClick={() => {
                   if (confirmModal.onCancel) confirmModal.onCancel();
                   setConfirmModal({ isOpen: false });
                 }}
-                className="btn-secondary"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all active:scale-95 active:opacity-90"
               >
                 取消
               </button>
@@ -689,8 +689,10 @@ export function Containers() {
                   if (confirmModal.onConfirm) confirmModal.onConfirm();
                 }}
                 className={cn(
-                  "btn-primary",
-                  confirmModal.type === 'danger' && "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                  "px-4 py-2 text-sm font-medium text-white rounded-xl transition-all shadow-md active:scale-95 active:opacity-90",
+                  confirmModal.type === 'danger'
+                    ? "bg-red-500 hover:bg-red-600"
+                    : "bg-primary-500 hover:bg-primary-600"
                 )}
               >
                 确认
@@ -715,14 +717,14 @@ export function Containers() {
             {!isBatchMode ? (
               <>
                 <button
-                  className="btn-secondary text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 rounded-xl shadow-sm transition-all active:scale-95 active:opacity-90 text-xs sm:text-sm font-medium px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
                   onClick={() => setIsBatchMode(true)}
                 >
                   批量操作
                 </button>
 
                 <button
-                  className="btn-primary text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                  className="flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 text-xs sm:text-sm font-medium px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
                   onClick={() => refetch()}
                 >
                   <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -731,7 +733,7 @@ export function Containers() {
               </>
             ) : (
               <button
-                className="btn-danger flex items-center justify-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
+                className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 text-xs sm:text-sm font-medium px-2.5 sm:px-4 py-1.5 sm:py-2 h-8 sm:h-10 shrink-0"
                 onClick={() => {
                   setSelectedContainers([])
                   setIsBatchMode(false)
@@ -748,7 +750,7 @@ export function Containers() {
         {isBatchMode && (
           <div className="flex justify-between w-full gap-1.5 sm:gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/50">
             <button
-              className="btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 rounded-xl shadow-sm transition-all active:scale-95 active:opacity-90 flex items-center justify-center flex-1 text-xs sm:text-sm font-medium px-0 sm:px-4 py-1.5 sm:py-2"
               onClick={toggleSelectAll}
               title={selectedContainers.length === containers.length ? '取消全选' : '全选'}
             >
@@ -757,7 +759,7 @@ export function Containers() {
               </span>
             </button>
             <button
-              className={`btn-primary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-primary-500 hover:bg-primary-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 flex items-center justify-center flex-1 text-xs sm:text-sm font-medium px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('start')}
               title="启动"
@@ -766,7 +768,7 @@ export function Containers() {
               <span className="whitespace-nowrap">启动</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 flex items-center justify-center flex-1 text-xs sm:text-sm font-medium px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('stop')}
               title="停止"
@@ -775,7 +777,7 @@ export function Containers() {
               <span className="whitespace-nowrap">停止</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 flex items-center justify-center flex-1 text-xs sm:text-sm font-medium px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('restart')}
               title="重启"
@@ -784,7 +786,7 @@ export function Containers() {
               <span className="whitespace-nowrap">重启</span>
             </button>
             <button
-              className={`btn-secondary flex items-center justify-center flex-1 text-xs sm:text-sm px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 flex items-center justify-center flex-1 text-xs sm:text-sm font-medium px-0 sm:px-4 py-1.5 sm:py-2 gap-0.5 sm:gap-1.5 ${selectedContainers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={selectedContainers.length === 0}
               onClick={() => handleBatchAction('update')}
               title="更新"
@@ -1621,8 +1623,8 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               <button
                 onClick={handleRename}
                 disabled={isRenaming || (name === currentContainer.name) || isActionProcessing || isUpdating}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${isRenaming || (name === currentContainer.name)
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition-all active:scale-95 active:opacity-90 shadow-sm ${isRenaming || (name === currentContainer.name)
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
                   : 'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
                   }`}
               >
@@ -1653,8 +1655,8 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               <button
                 onClick={handleSave}
                 disabled={isUpdating || (imageNameAndTag === currentContainer.usingImage) || !imageNameAndTag.trim()}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center ${isUpdating || (imageNameAndTag === currentContainer.usingImage) || !imageNameAndTag.trim()
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition-all active:scale-95 active:opacity-90 shadow-sm flex items-center ${isUpdating || (imageNameAndTag === currentContainer.usingImage) || !imageNameAndTag.trim()
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
                   : 'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
                   }`}
               >
@@ -1675,16 +1677,16 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         </div>
 
         {/* 弹窗底部操作按钮 */}
-        <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-700/30">
+        <div className="border-t border-gray-100 dark:border-gray-700/50 px-6 py-4 bg-gray-50/50 dark:bg-gray-700/20">
           <div className="flex justify-end gap-2">
 
             <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => onUpdate(container.id)}
                 disabled={isActionProcessing || isUpdating}
-                className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-sm rounded-lg transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'update'
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                  : 'bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
+                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-xl transition-all shadow-md active:scale-95 active:opacity-90 flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'update'
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
+                  : 'bg-purple-500 hover:bg-purple-600 text-white'
                   }`}
                 title="更新"
               >
@@ -1706,9 +1708,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
                   <button
                     onClick={() => handleContainerAction('stop')}
                     disabled={isActionProcessing || isUpdating}
-                    className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-sm rounded-lg transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'stop'
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                      : 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
+                    className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-xl transition-all shadow-md active:scale-95 active:opacity-90 flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'stop'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
+                      : 'bg-red-500 hover:bg-red-600 text-white'
                       }`}
                     title="停止"
                   >
@@ -1727,9 +1729,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
                   <button
                     onClick={() => handleContainerAction('restart')}
                     disabled={isActionProcessing || isUpdating}
-                    className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-sm rounded-lg transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'restart'
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                      : 'bg-yellow-500 text-white hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600'
+                    className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-xl transition-all shadow-md active:scale-95 active:opacity-90 flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'restart'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
+                      : 'bg-yellow-500 hover:bg-yellow-600 text-white'
                       }`}
                     title="重启"
                   >
@@ -1750,9 +1752,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
                 <button
                   onClick={() => handleContainerAction('start')}
                   disabled={isActionProcessing || isUpdating}
-                  className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-sm rounded-lg transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'start'
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                    : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                  className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-xl transition-all shadow-md active:scale-95 active:opacity-90 flex items-center justify-center sm:justify-start gap-1 sm:gap-2 ${isActionProcessing && currentAction === 'start'
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 shadow-none'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
                     }`}
                   title="启动"
                 >

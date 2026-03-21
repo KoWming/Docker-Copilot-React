@@ -30,14 +30,14 @@ export function About() {
               href="https://github.com/onlyLTY/dockercopilot"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90"
             >
               <Github className="h-4 w-4" />
               <span>GitHub</span>
             </a>
             <a
               href="mailto:onlylty@lty.wiki"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 rounded-xl shadow-sm transition-all active:scale-95 active:opacity-90"
             >
               <Mail className="h-4 w-4" />
               <span>联系作者</span>

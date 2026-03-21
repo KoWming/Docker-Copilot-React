@@ -335,38 +335,59 @@ export function Backups() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-4 sm:py-4">
       {/* 自定义确认弹窗 */}
       {confirmModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transition-all">
-            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {confirmModal.title}
-              </h3>
+            <div className={cn(
+              "px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center",
+              confirmModal.type === 'danger' && "bg-red-50/30 dark:bg-red-900/10",
+              confirmModal.type === 'warning' && "bg-orange-50/30 dark:bg-orange-900/10"
+            )}>
+              <div className="flex items-center gap-3">
+                {confirmModal.type === 'danger' && (
+                  <div className="relative h-10 w-10 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/30 rounded-full flex items-center justify-center border border-red-200 dark:border-red-700">
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                )}
+                {confirmModal.type === 'warning' && (
+                  <div className="relative h-10 w-10 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-full flex items-center justify-center border border-orange-200 dark:border-orange-700">
+                    <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                )}
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  {confirmModal.title}
+                </h3>
+              </div>
               <button
                 onClick={confirmModal.onCancel}
-                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                title="关闭"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="px-6 py-4">
-              <p className="text-gray-600 dark:text-gray-400">
+            
+            <div className="px-6 py-5">
+              <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
                 {confirmModal.message}
-              </p>
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 flex justify-end space-x-3">
+
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 flex justify-end gap-3 bg-gray-50/50 dark:bg-gray-700/20">
               <button
                 onClick={confirmModal.onCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all active:scale-95 active:opacity-90"
               >
                 取消
               </button>
               <button
                 onClick={confirmModal.onConfirm}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium text-white rounded-xl transition-all shadow-md active:scale-95",
+                  "px-4 py-2 text-sm font-medium text-white rounded-xl transition-all shadow-md active:scale-95 active:opacity-90",
                   confirmModal.type === 'danger'
-                    ? "bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
-                    : "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
+                    ? "bg-red-500 hover:bg-red-600"
+                    : confirmModal.type === 'warning'
+                      ? "bg-orange-500 hover:bg-orange-600"
+                      : "bg-primary-500 hover:bg-primary-600"
                 )}
               >
                 确认
@@ -387,7 +408,7 @@ export function Backups() {
             <button
               onClick={handleBackupToCompose}
               disabled={isBackingUp}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-400 rounded-xl shadow-sm transition-all active:scale-95 active:opacity-90 disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
               <FileCode className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isBackingUp ? 'animate-spin' : ''}`} />
               <span>YAML</span>
@@ -395,7 +416,7 @@ export function Backups() {
             <button
               onClick={handleBackup}
               disabled={isBackingUp}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 rounded-xl shadow-sm transition-all active:scale-95 active:opacity-90 disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
               <Save className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isBackingUp ? 'animate-spin' : ''}`} />
               <span>JSON</span>
@@ -403,7 +424,7 @@ export function Backups() {
             <button
               onClick={fetchBackups}
               disabled={isLoading}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl shadow-md transition-all active:scale-95 active:opacity-90 disabled:opacity-50 text-xs sm:text-sm font-medium h-8 sm:h-10 shrink-0"
             >
               <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
               <span>刷新</span>
@@ -430,43 +451,27 @@ export function Backups() {
       {/* 成功弹窗 */}
       {successModal.isOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100 hover:scale-105">
-            {/* 顶部装饰条 */}
-            <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600"></div>
-
-            <div className="p-8 flex flex-col items-center text-center">
-              {/* 成功图标容器 - 带脉冲动画 */}
-              <div className="relative mb-6">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[24px] shadow-2xl max-w-sm w-full overflow-hidden transition-all">
+            <div className="px-6 py-8 flex flex-col items-center text-center">
+              <div className="relative mb-5">
                 <div className="absolute inset-0 bg-green-400/20 rounded-full blur-xl animate-pulse"></div>
-                <div className="relative h-16 w-16 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center border border-green-200 dark:border-green-700">
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 animate-bounceIn" />
+                <div className="relative h-14 w-14 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center border border-green-200 dark:border-green-700">
+                  <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400 animate-bounceIn" />
                 </div>
               </div>
-
-              {/* 标题 */}
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                 操作成功
               </h3>
-
-              {/* 分隔线 */}
-              <div className="w-12 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent rounded-full mb-4"></div>
-
-              {/* 消息内容 */}
-              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-8">
+              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">
                 {successModal.message}
               </p>
-
-              {/* 按钮 */}
               <button
                 onClick={() => setSuccessModal({ isOpen: false, message: '' })}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:shadow-lg hover:scale-105 active:scale-95 shadow-lg"
+                className="w-full px-4 py-2 text-sm font-medium text-white rounded-xl transition-all shadow-md active:scale-95 active:opacity-90 bg-green-500 hover:bg-green-600"
               >
                 完成
               </button>
             </div>
-
-            {/* 底部装饰 */}
-            <div className="h-0.5 bg-gradient-to-r from-transparent via-green-200 dark:via-green-800 to-transparent"></div>
           </div>
         </div>
       )}
@@ -575,7 +580,7 @@ export function Backups() {
                       <div className="flex gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <button
                           onClick={() => showRestoreConfirm(backup)}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors active:scale-95"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all active:scale-95 active:opacity-90"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           <span>恢复</span>
@@ -583,7 +588,7 @@ export function Backups() {
                         <button
                           onClick={() => showDeleteConfirm(backup)}
                           disabled={isDeleting[backup]}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all active:scale-95 active:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                           title="删除备份"
                         >
                           {isDeleting[backup] ? (
